@@ -22,22 +22,23 @@ using grpc::ServerReader;
 using grpc::Status;
 
 
-using unreliable_afs::MkDirReq;
-using unreliable_afs::MkDirReply;
+using unreliable_afs::MkdirRequest;
+using unreliable_afs::MkdirReply;
 using unreliable_afs::UnreliableAFS;
+
+std::string server_base_directory;
 
 class UnreliableAFSServiceImpl final : public UnreliableAFS::Service {
     public:
-        const std::string path_prefix; 
-        UnreliableAFSServiceImpl(): path_prefix("/tmp/uafs") {
+        UnreliableAFSServiceImpl() {
         }
 
-        Status MkDir(ServerContext* context, const MkDirReq* request,
-                MkDirReply* reply) override {
+        Status Mkdir(ServerContext* context, const MkdirRequest* request,
+                MkdirReply* reply) override {
             // default errno = 0
             reply->set_err(0);
-            std::string path = path_prefix + request->path();
-            printf("MkDir: %s \n", path.c_str());
+            std::string path = server_base_directory + request->path();
+            std::cout<<"Making Directory:"<<path<<std::endl;
             int res;
 
             res = mkdir(path.c_str(), request->mode());
@@ -51,9 +52,11 @@ class UnreliableAFSServiceImpl final : public UnreliableAFS::Service {
 
 };
 
-void RunServer() {
+void RunServer(std::string base_path_str) {
   std::string server_address("0.0.0.0:50051");
   UnreliableAFSServiceImpl service;
+
+  server_base_directory = base_path_str;
 
   grpc::EnableDefaultHealthCheckService(true);
 //   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
@@ -73,7 +76,30 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
-  RunServer();
+
+  std::string base_path_str;
+  std::string arg_str("--base");
+  if (argc > 1) {
+    std::string arg_val = argv[1];
+    size_t start_pos = arg_val.find(arg_str);
+    if (start_pos != std::string::npos) {
+      start_pos += arg_str.size();
+      if (arg_val[start_pos] == '=') {
+        base_path_str = arg_val.substr(start_pos + 1);
+      } else {
+        std::cout << "The only correct argument syntax is --base="
+                  << std::endl;
+        return 0;
+      }
+    } else {
+      std::cout << "The only acceptable argument is --base=" << std::endl;
+      return 0;
+    }
+  } else {
+    base_path_str = "/tmp/uafs";
+  }
+
+  RunServer(base_path_str);
 
   return 0;
 }

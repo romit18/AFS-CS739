@@ -13,8 +13,8 @@ using grpc::ClientWriter;
 using grpc::Status;
 
 using unreliable_afs::UnreliableAFS;
-using unreliable_afs::MkDirReq;
-using unreliable_afs::MkDirReply;
+using unreliable_afs::MkdirRequest;
+using unreliable_afs::MkdirReply;
 
 class GreeterClient {
 
@@ -23,14 +23,14 @@ class GreeterClient {
         : stub_(UnreliableAFS::NewStub(channel)) {}
 
 
-    int MkDir(const std::string& path, int mode) {
-        MkDirReq request;
+    int Mkdir(const std::string& path, int mode) {
+        MkdirRequest request;
         request.set_path(path);
         request.set_mode(mode);
 
-        MkDirReply reply;
+        MkdirReply reply;
         ClientContext context;
-        Status status = stub_->MkDir(&context, request, &reply);
+        Status status = stub_->Mkdir(&context, request, &reply);
 
         return status.ok() ? reply.err() : -1;
     }
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   GreeterClient greeter(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
   std::string dirpath("/world");
-  int res = greeter.MkDir(dirpath, 0777);
+  int res = greeter.Mkdir(dirpath, 0777);
   std::cout << "Greeter received: " << res << std::endl;
 
 
