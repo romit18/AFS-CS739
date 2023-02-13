@@ -16,20 +16,22 @@
 
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
-CXX = g++
+CXX = gcc
 CPPFLAGS += `pkg-config --cflags protobuf grpc`
 CXXFLAGS += -std=c++14
-ifeq ($(SYSTEM),Darwin)
+# ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
            -pthread\
            -lgrpc++_reflection\
-           -ldl
-else
-LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
-           -pthread\
-           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
-           -ldl
-endif
+           -ldl\
+		   -arch x86_64
+# else
+# LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
+#            -pthread\
+#            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
+#            -ldl\
+# 		   -arch x86_64
+# endif
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
@@ -42,10 +44,10 @@ vpath %.proto $(PROTOS_PATH)
 all: system-check unreliable_afs_server unreliable_afs_client
 
 unreliable_afs_client: unreliable_afs.pb.o unreliable_afs.grpc.pb.o unreliable_afs_client.o
-	$(CXX) $^ $(LDFLAGS) -o $@
+	$(CXX) $^ $(LDFLAGS) $^ $(CFLAGS) -o $@
 
 unreliable_afs_server: unreliable_afs.pb.o unreliable_afs.grpc.pb.o unreliable_afs_server.o
-	$(CXX) $^ $(LDFLAGS) -o $@
+	$(CXX) $^ $(LDFLAGS) $(CFLAGS) -o $@
 
 # greeter_async_client: helloworld.pb.o helloworld.grpc.pb.o greeter_async_client.o
 # 	$(CXX) $^ $(LDFLAGS) -o $@
