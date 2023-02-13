@@ -22,7 +22,7 @@
 namespace unreliable_afs {
 
 static const char* UnreliableAFS_method_names[] = {
-  "/unreliable_afs.UnreliableAFS/MkDir",
+  "/unreliable_afs.UnreliableAFS/Mkdir",
 };
 
 std::unique_ptr< UnreliableAFS::Stub> UnreliableAFS::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -32,28 +32,28 @@ std::unique_ptr< UnreliableAFS::Stub> UnreliableAFS::NewStub(const std::shared_p
 }
 
 UnreliableAFS::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options)
-  : channel_(channel), rpcmethod_MkDir_(UnreliableAFS_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  : channel_(channel), rpcmethod_Mkdir_(UnreliableAFS_method_names[0], options.suffix_for_stats(),::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
-::grpc::Status UnreliableAFS::Stub::MkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::unreliable_afs::MkDirReply* response) {
-  return ::grpc::internal::BlockingUnaryCall< ::unreliable_afs::MkDirReq, ::unreliable_afs::MkDirReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_MkDir_, context, request, response);
+::grpc::Status UnreliableAFS::Stub::Mkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::unreliable_afs::MkdirReply* response) {
+  return ::grpc::internal::BlockingUnaryCall< ::unreliable_afs::MkdirRequest, ::unreliable_afs::MkdirReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), rpcmethod_Mkdir_, context, request, response);
 }
 
-void UnreliableAFS::Stub::async::MkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq* request, ::unreliable_afs::MkDirReply* response, std::function<void(::grpc::Status)> f) {
-  ::grpc::internal::CallbackUnaryCall< ::unreliable_afs::MkDirReq, ::unreliable_afs::MkDirReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_MkDir_, context, request, response, std::move(f));
+void UnreliableAFS::Stub::async::Mkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest* request, ::unreliable_afs::MkdirReply* response, std::function<void(::grpc::Status)> f) {
+  ::grpc::internal::CallbackUnaryCall< ::unreliable_afs::MkdirRequest, ::unreliable_afs::MkdirReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Mkdir_, context, request, response, std::move(f));
 }
 
-void UnreliableAFS::Stub::async::MkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq* request, ::unreliable_afs::MkDirReply* response, ::grpc::ClientUnaryReactor* reactor) {
-  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_MkDir_, context, request, response, reactor);
+void UnreliableAFS::Stub::async::Mkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest* request, ::unreliable_afs::MkdirReply* response, ::grpc::ClientUnaryReactor* reactor) {
+  ::grpc::internal::ClientCallbackUnaryFactory::Create< ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(stub_->channel_.get(), stub_->rpcmethod_Mkdir_, context, request, response, reactor);
 }
 
-::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkDirReply>* UnreliableAFS::Stub::PrepareAsyncMkDirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::unreliable_afs::MkDirReply, ::unreliable_afs::MkDirReq, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_MkDir_, context, request);
+::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkdirReply>* UnreliableAFS::Stub::PrepareAsyncMkdirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderHelper::Create< ::unreliable_afs::MkdirReply, ::unreliable_afs::MkdirRequest, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(channel_.get(), cq, rpcmethod_Mkdir_, context, request);
 }
 
-::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkDirReply>* UnreliableAFS::Stub::AsyncMkDirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkdirReply>* UnreliableAFS::Stub::AsyncMkdirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) {
   auto* result =
-    this->PrepareAsyncMkDirRaw(context, request, cq);
+    this->PrepareAsyncMkdirRaw(context, request, cq);
   result->StartCall();
   return result;
 }
@@ -62,19 +62,19 @@ UnreliableAFS::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       UnreliableAFS_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< UnreliableAFS::Service, ::unreliable_afs::MkDirReq, ::unreliable_afs::MkDirReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
+      new ::grpc::internal::RpcMethodHandler< UnreliableAFS::Service, ::unreliable_afs::MkdirRequest, ::unreliable_afs::MkdirReply, ::grpc::protobuf::MessageLite, ::grpc::protobuf::MessageLite>(
           [](UnreliableAFS::Service* service,
              ::grpc::ServerContext* ctx,
-             const ::unreliable_afs::MkDirReq* req,
-             ::unreliable_afs::MkDirReply* resp) {
-               return service->MkDir(ctx, req, resp);
+             const ::unreliable_afs::MkdirRequest* req,
+             ::unreliable_afs::MkdirReply* resp) {
+               return service->Mkdir(ctx, req, resp);
              }, this)));
 }
 
 UnreliableAFS::Service::~Service() {
 }
 
-::grpc::Status UnreliableAFS::Service::MkDir(::grpc::ServerContext* context, const ::unreliable_afs::MkDirReq* request, ::unreliable_afs::MkDirReply* response) {
+::grpc::Status UnreliableAFS::Service::Mkdir(::grpc::ServerContext* context, const ::unreliable_afs::MkdirRequest* request, ::unreliable_afs::MkdirReply* response) {
   (void) context;
   (void) request;
   (void) response;

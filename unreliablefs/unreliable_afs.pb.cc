@@ -21,33 +21,33 @@ namespace _pb = ::PROTOBUF_NAMESPACE_ID;
 namespace _pbi = _pb::internal;
 
 namespace unreliable_afs {
-PROTOBUF_CONSTEXPR MkDirReq::MkDirReq(
+PROTOBUF_CONSTEXPR MkdirRequest::MkdirRequest(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.path_)*/{&::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized{}}
   , /*decltype(_impl_.mode_)*/0
   , /*decltype(_impl_._cached_size_)*/{}} {}
-struct MkDirReqDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MkDirReqDefaultTypeInternal()
+struct MkdirRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MkdirRequestDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MkDirReqDefaultTypeInternal() {}
+  ~MkdirRequestDefaultTypeInternal() {}
   union {
-    MkDirReq _instance;
+    MkdirRequest _instance;
   };
 };
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MkDirReqDefaultTypeInternal _MkDirReq_default_instance_;
-PROTOBUF_CONSTEXPR MkDirReply::MkDirReply(
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MkdirRequestDefaultTypeInternal _MkdirRequest_default_instance_;
+PROTOBUF_CONSTEXPR MkdirReply::MkdirReply(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.err_)*/0
   , /*decltype(_impl_._cached_size_)*/{}} {}
-struct MkDirReplyDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR MkDirReplyDefaultTypeInternal()
+struct MkdirReplyDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR MkdirReplyDefaultTypeInternal()
       : _instance(::_pbi::ConstantInitialized{}) {}
-  ~MkDirReplyDefaultTypeInternal() {}
+  ~MkdirReplyDefaultTypeInternal() {}
   union {
-    MkDirReply _instance;
+    MkdirReply _instance;
   };
 };
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MkDirReplyDefaultTypeInternal _MkDirReply_default_instance_;
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 MkdirReplyDefaultTypeInternal _MkdirReply_default_instance_;
 }  // namespace unreliable_afs
 static ::_pb::Metadata file_level_metadata_unreliable_5fafs_2eproto[2];
 static constexpr ::_pb::EnumDescriptor const** file_level_enum_descriptors_unreliable_5fafs_2eproto = nullptr;
@@ -55,42 +55,42 @@ static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors
 
 const uint32_t TableStruct_unreliable_5fafs_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkDirReq, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkdirRequest, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkDirReq, _impl_.path_),
-  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkDirReq, _impl_.mode_),
+  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkdirRequest, _impl_.path_),
+  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkdirRequest, _impl_.mode_),
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkDirReply, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkdirReply, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkDirReply, _impl_.err_),
+  PROTOBUF_FIELD_OFFSET(::unreliable_afs::MkdirReply, _impl_.err_),
 };
 static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, -1, -1, sizeof(::unreliable_afs::MkDirReq)},
-  { 8, -1, -1, sizeof(::unreliable_afs::MkDirReply)},
+  { 0, -1, -1, sizeof(::unreliable_afs::MkdirRequest)},
+  { 8, -1, -1, sizeof(::unreliable_afs::MkdirReply)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
-  &::unreliable_afs::_MkDirReq_default_instance_._instance,
-  &::unreliable_afs::_MkDirReply_default_instance_._instance,
+  &::unreliable_afs::_MkdirRequest_default_instance_._instance,
+  &::unreliable_afs::_MkdirReply_default_instance_._instance,
 };
 
 const char descriptor_table_protodef_unreliable_5fafs_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\024unreliable_afs.proto\022\016unreliable_afs\"&"
-  "\n\010MkDirReq\022\014\n\004path\030\001 \001(\t\022\014\n\004mode\030\002 \001(\005\"\031"
-  "\n\nMkDirReply\022\013\n\003err\030\001 \001(\0052P\n\rUnreliableA"
-  "FS\022\?\n\005MkDir\022\030.unreliable_afs.MkDirReq\032\032."
-  "unreliable_afs.MkDirReply\"\000B\034\n\032edu.wisc."
-  "cs.unreliable_afsb\006proto3"
+  "\n\024unreliable_afs.proto\022\016unreliable_afs\"*"
+  "\n\014MkdirRequest\022\014\n\004path\030\001 \001(\t\022\014\n\004mode\030\002 \001"
+  "(\005\"\031\n\nMkdirReply\022\013\n\003err\030\001 \001(\0052T\n\rUnrelia"
+  "bleAFS\022C\n\005Mkdir\022\034.unreliable_afs.MkdirRe"
+  "quest\032\032.unreliable_afs.MkdirReply\"\000B\034\n\032e"
+  "du.wisc.cs.unreliable_afsb\006proto3"
   ;
 static ::_pbi::once_flag descriptor_table_unreliable_5fafs_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_unreliable_5fafs_2eproto = {
-    false, false, 225, descriptor_table_protodef_unreliable_5fafs_2eproto,
+    false, false, 233, descriptor_table_protodef_unreliable_5fafs_2eproto,
     "unreliable_afs.proto",
     &descriptor_table_unreliable_5fafs_2eproto_once, nullptr, 0, 2,
     schemas, file_default_instances, TableStruct_unreliable_5fafs_2eproto::offsets,
@@ -107,19 +107,19 @@ namespace unreliable_afs {
 
 // ===================================================================
 
-class MkDirReq::_Internal {
+class MkdirRequest::_Internal {
  public:
 };
 
-MkDirReq::MkDirReq(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+MkdirRequest::MkdirRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
-  // @@protoc_insertion_point(arena_constructor:unreliable_afs.MkDirReq)
+  // @@protoc_insertion_point(arena_constructor:unreliable_afs.MkdirRequest)
 }
-MkDirReq::MkDirReq(const MkDirReq& from)
+MkdirRequest::MkdirRequest(const MkdirRequest& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
-  MkDirReq* const _this = this; (void)_this;
+  MkdirRequest* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.path_){}
     , decltype(_impl_.mode_){}
@@ -135,10 +135,10 @@ MkDirReq::MkDirReq(const MkDirReq& from)
       _this->GetArenaForAllocation());
   }
   _this->_impl_.mode_ = from._impl_.mode_;
-  // @@protoc_insertion_point(copy_constructor:unreliable_afs.MkDirReq)
+  // @@protoc_insertion_point(copy_constructor:unreliable_afs.MkdirRequest)
 }
 
-inline void MkDirReq::SharedCtor(
+inline void MkdirRequest::SharedCtor(
     ::_pb::Arena* arena, bool is_message_owned) {
   (void)arena;
   (void)is_message_owned;
@@ -153,8 +153,8 @@ inline void MkDirReq::SharedCtor(
   #endif // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 }
 
-MkDirReq::~MkDirReq() {
-  // @@protoc_insertion_point(destructor:unreliable_afs.MkDirReq)
+MkdirRequest::~MkdirRequest() {
+  // @@protoc_insertion_point(destructor:unreliable_afs.MkdirRequest)
   if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
   (void)arena;
     return;
@@ -162,17 +162,17 @@ MkDirReq::~MkDirReq() {
   SharedDtor();
 }
 
-inline void MkDirReq::SharedDtor() {
+inline void MkdirRequest::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   _impl_.path_.Destroy();
 }
 
-void MkDirReq::SetCachedSize(int size) const {
+void MkdirRequest::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-void MkDirReq::Clear() {
-// @@protoc_insertion_point(message_clear_start:unreliable_afs.MkDirReq)
+void MkdirRequest::Clear() {
+// @@protoc_insertion_point(message_clear_start:unreliable_afs.MkdirRequest)
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -182,7 +182,7 @@ void MkDirReq::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* MkDirReq::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+const char* MkdirRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     uint32_t tag;
@@ -194,7 +194,7 @@ const char* MkDirReq::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx)
           auto str = _internal_mutable_path();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "unreliable_afs.MkDirReq.path"));
+          CHK_(::_pbi::VerifyUTF8(str, "unreliable_afs.MkdirRequest.path"));
         } else
           goto handle_unusual;
         continue;
@@ -229,9 +229,9 @@ failure:
 #undef CHK_
 }
 
-uint8_t* MkDirReq::_InternalSerialize(
+uint8_t* MkdirRequest::_InternalSerialize(
     uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:unreliable_afs.MkDirReq)
+  // @@protoc_insertion_point(serialize_to_array_start:unreliable_afs.MkdirRequest)
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -240,7 +240,7 @@ uint8_t* MkDirReq::_InternalSerialize(
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
       this->_internal_path().data(), static_cast<int>(this->_internal_path().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
-      "unreliable_afs.MkDirReq.path");
+      "unreliable_afs.MkdirRequest.path");
     target = stream->WriteStringMaybeAliased(
         1, this->_internal_path(), target);
   }
@@ -255,12 +255,12 @@ uint8_t* MkDirReq::_InternalSerialize(
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:unreliable_afs.MkDirReq)
+  // @@protoc_insertion_point(serialize_to_array_end:unreliable_afs.MkdirRequest)
   return target;
 }
 
-size_t MkDirReq::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:unreliable_afs.MkDirReq)
+size_t MkdirRequest::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:unreliable_afs.MkdirRequest)
   size_t total_size = 0;
 
   uint32_t cached_has_bits = 0;
@@ -282,17 +282,17 @@ size_t MkDirReq::ByteSizeLong() const {
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData MkDirReq::_class_data_ = {
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData MkdirRequest::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    MkDirReq::MergeImpl
+    MkdirRequest::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*MkDirReq::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*MkdirRequest::GetClassData() const { return &_class_data_; }
 
 
-void MkDirReq::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<MkDirReq*>(&to_msg);
-  auto& from = static_cast<const MkDirReq&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:unreliable_afs.MkDirReq)
+void MkdirRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<MkdirRequest*>(&to_msg);
+  auto& from = static_cast<const MkdirRequest&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:unreliable_afs.MkdirRequest)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -306,18 +306,18 @@ void MkDirReq::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTO
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MkDirReq::CopyFrom(const MkDirReq& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:unreliable_afs.MkDirReq)
+void MkdirRequest::CopyFrom(const MkdirRequest& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:unreliable_afs.MkdirRequest)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool MkDirReq::IsInitialized() const {
+bool MkdirRequest::IsInitialized() const {
   return true;
 }
 
-void MkDirReq::InternalSwap(MkDirReq* other) {
+void MkdirRequest::InternalSwap(MkdirRequest* other) {
   using std::swap;
   auto* lhs_arena = GetArenaForAllocation();
   auto* rhs_arena = other->GetArenaForAllocation();
@@ -329,7 +329,7 @@ void MkDirReq::InternalSwap(MkDirReq* other) {
   swap(_impl_.mode_, other->_impl_.mode_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata MkDirReq::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata MkdirRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_unreliable_5fafs_2eproto_getter, &descriptor_table_unreliable_5fafs_2eproto_once,
       file_level_metadata_unreliable_5fafs_2eproto[0]);
@@ -337,29 +337,29 @@ void MkDirReq::InternalSwap(MkDirReq* other) {
 
 // ===================================================================
 
-class MkDirReply::_Internal {
+class MkdirReply::_Internal {
  public:
 };
 
-MkDirReply::MkDirReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
+MkdirReply::MkdirReply(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
-  // @@protoc_insertion_point(arena_constructor:unreliable_afs.MkDirReply)
+  // @@protoc_insertion_point(arena_constructor:unreliable_afs.MkdirReply)
 }
-MkDirReply::MkDirReply(const MkDirReply& from)
+MkdirReply::MkdirReply(const MkdirReply& from)
   : ::PROTOBUF_NAMESPACE_ID::Message() {
-  MkDirReply* const _this = this; (void)_this;
+  MkdirReply* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.err_){}
     , /*decltype(_impl_._cached_size_)*/{}};
 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   _this->_impl_.err_ = from._impl_.err_;
-  // @@protoc_insertion_point(copy_constructor:unreliable_afs.MkDirReply)
+  // @@protoc_insertion_point(copy_constructor:unreliable_afs.MkdirReply)
 }
 
-inline void MkDirReply::SharedCtor(
+inline void MkdirReply::SharedCtor(
     ::_pb::Arena* arena, bool is_message_owned) {
   (void)arena;
   (void)is_message_owned;
@@ -369,8 +369,8 @@ inline void MkDirReply::SharedCtor(
   };
 }
 
-MkDirReply::~MkDirReply() {
-  // @@protoc_insertion_point(destructor:unreliable_afs.MkDirReply)
+MkdirReply::~MkdirReply() {
+  // @@protoc_insertion_point(destructor:unreliable_afs.MkdirReply)
   if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
   (void)arena;
     return;
@@ -378,16 +378,16 @@ MkDirReply::~MkDirReply() {
   SharedDtor();
 }
 
-inline void MkDirReply::SharedDtor() {
+inline void MkdirReply::SharedDtor() {
   GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
-void MkDirReply::SetCachedSize(int size) const {
+void MkdirReply::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-void MkDirReply::Clear() {
-// @@protoc_insertion_point(message_clear_start:unreliable_afs.MkDirReply)
+void MkdirReply::Clear() {
+// @@protoc_insertion_point(message_clear_start:unreliable_afs.MkdirReply)
   uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -396,7 +396,7 @@ void MkDirReply::Clear() {
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* MkDirReply::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+const char* MkdirReply::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     uint32_t tag;
@@ -433,9 +433,9 @@ failure:
 #undef CHK_
 }
 
-uint8_t* MkDirReply::_InternalSerialize(
+uint8_t* MkdirReply::_InternalSerialize(
     uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:unreliable_afs.MkDirReply)
+  // @@protoc_insertion_point(serialize_to_array_start:unreliable_afs.MkdirReply)
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -449,12 +449,12 @@ uint8_t* MkDirReply::_InternalSerialize(
     target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:unreliable_afs.MkDirReply)
+  // @@protoc_insertion_point(serialize_to_array_end:unreliable_afs.MkdirReply)
   return target;
 }
 
-size_t MkDirReply::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:unreliable_afs.MkDirReply)
+size_t MkdirReply::ByteSizeLong() const {
+// @@protoc_insertion_point(message_byte_size_start:unreliable_afs.MkdirReply)
   size_t total_size = 0;
 
   uint32_t cached_has_bits = 0;
@@ -469,17 +469,17 @@ size_t MkDirReply::ByteSizeLong() const {
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData MkDirReply::_class_data_ = {
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData MkdirReply::_class_data_ = {
     ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    MkDirReply::MergeImpl
+    MkdirReply::MergeImpl
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*MkDirReply::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*MkdirReply::GetClassData() const { return &_class_data_; }
 
 
-void MkDirReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<MkDirReply*>(&to_msg);
-  auto& from = static_cast<const MkDirReply&>(from_msg);
-  // @@protoc_insertion_point(class_specific_merge_from_start:unreliable_afs.MkDirReply)
+void MkdirReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+  auto* const _this = static_cast<MkdirReply*>(&to_msg);
+  auto& from = static_cast<const MkdirReply&>(from_msg);
+  // @@protoc_insertion_point(class_specific_merge_from_start:unreliable_afs.MkdirReply)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
@@ -490,24 +490,24 @@ void MkDirReply::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PRO
   _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
-void MkDirReply::CopyFrom(const MkDirReply& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:unreliable_afs.MkDirReply)
+void MkdirReply::CopyFrom(const MkdirReply& from) {
+// @@protoc_insertion_point(class_specific_copy_from_start:unreliable_afs.MkdirReply)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool MkDirReply::IsInitialized() const {
+bool MkdirReply::IsInitialized() const {
   return true;
 }
 
-void MkDirReply::InternalSwap(MkDirReply* other) {
+void MkdirReply::InternalSwap(MkdirReply* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_.err_, other->_impl_.err_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata MkDirReply::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata MkdirReply::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_unreliable_5fafs_2eproto_getter, &descriptor_table_unreliable_5fafs_2eproto_once,
       file_level_metadata_unreliable_5fafs_2eproto[1]);
@@ -516,13 +516,13 @@ void MkDirReply::InternalSwap(MkDirReply* other) {
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace unreliable_afs
 PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::unreliable_afs::MkDirReq*
-Arena::CreateMaybeMessage< ::unreliable_afs::MkDirReq >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::unreliable_afs::MkDirReq >(arena);
+template<> PROTOBUF_NOINLINE ::unreliable_afs::MkdirRequest*
+Arena::CreateMaybeMessage< ::unreliable_afs::MkdirRequest >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::unreliable_afs::MkdirRequest >(arena);
 }
-template<> PROTOBUF_NOINLINE ::unreliable_afs::MkDirReply*
-Arena::CreateMaybeMessage< ::unreliable_afs::MkDirReply >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::unreliable_afs::MkDirReply >(arena);
+template<> PROTOBUF_NOINLINE ::unreliable_afs::MkdirReply*
+Arena::CreateMaybeMessage< ::unreliable_afs::MkdirReply >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::unreliable_afs::MkdirReply >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

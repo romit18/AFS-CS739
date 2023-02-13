@@ -36,42 +36,42 @@ class UnreliableAFS final {
    public:
     virtual ~StubInterface() {}
     // rpc GetAttr (GetAttrReq) returns (GetAttrReply) {}
-    virtual ::grpc::Status MkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::unreliable_afs::MkDirReply* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkDirReply>> AsyncMkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkDirReply>>(AsyncMkDirRaw(context, request, cq));
+    virtual ::grpc::Status Mkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::unreliable_afs::MkdirReply* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkdirReply>> AsyncMkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkdirReply>>(AsyncMkdirRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkDirReply>> PrepareAsyncMkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkDirReply>>(PrepareAsyncMkDirRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkdirReply>> PrepareAsyncMkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkdirReply>>(PrepareAsyncMkdirRaw(context, request, cq));
     }
     class async_interface {
      public:
       virtual ~async_interface() {}
       // rpc GetAttr (GetAttrReq) returns (GetAttrReply) {}
-      virtual void MkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq* request, ::unreliable_afs::MkDirReply* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void MkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq* request, ::unreliable_afs::MkDirReply* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Mkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest* request, ::unreliable_afs::MkdirReply* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Mkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest* request, ::unreliable_afs::MkdirReply* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkDirReply>* AsyncMkDirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkDirReply>* PrepareAsyncMkDirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkdirReply>* AsyncMkdirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::unreliable_afs::MkdirReply>* PrepareAsyncMkdirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-    ::grpc::Status MkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::unreliable_afs::MkDirReply* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkDirReply>> AsyncMkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkDirReply>>(AsyncMkDirRaw(context, request, cq));
+    ::grpc::Status Mkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::unreliable_afs::MkdirReply* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkdirReply>> AsyncMkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkdirReply>>(AsyncMkdirRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkDirReply>> PrepareAsyncMkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkDirReply>>(PrepareAsyncMkDirRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkdirReply>> PrepareAsyncMkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkdirReply>>(PrepareAsyncMkdirRaw(context, request, cq));
     }
     class async final :
       public StubInterface::async_interface {
      public:
-      void MkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq* request, ::unreliable_afs::MkDirReply* response, std::function<void(::grpc::Status)>) override;
-      void MkDir(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq* request, ::unreliable_afs::MkDirReply* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Mkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest* request, ::unreliable_afs::MkdirReply* response, std::function<void(::grpc::Status)>) override;
+      void Mkdir(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest* request, ::unreliable_afs::MkdirReply* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -83,9 +83,9 @@ class UnreliableAFS final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkDirReply>* AsyncMkDirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkDirReply>* PrepareAsyncMkDirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkDirReq& request, ::grpc::CompletionQueue* cq) override;
-    const ::grpc::internal::RpcMethod rpcmethod_MkDir_;
+    ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkdirReply>* AsyncMkdirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::unreliable_afs::MkdirReply>* PrepareAsyncMkdirRaw(::grpc::ClientContext* context, const ::unreliable_afs::MkdirRequest& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_Mkdir_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -94,147 +94,147 @@ class UnreliableAFS final {
     Service();
     virtual ~Service();
     // rpc GetAttr (GetAttrReq) returns (GetAttrReply) {}
-    virtual ::grpc::Status MkDir(::grpc::ServerContext* context, const ::unreliable_afs::MkDirReq* request, ::unreliable_afs::MkDirReply* response);
+    virtual ::grpc::Status Mkdir(::grpc::ServerContext* context, const ::unreliable_afs::MkdirRequest* request, ::unreliable_afs::MkdirReply* response);
   };
   template <class BaseClass>
-  class WithAsyncMethod_MkDir : public BaseClass {
+  class WithAsyncMethod_Mkdir : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithAsyncMethod_MkDir() {
+    WithAsyncMethod_Mkdir() {
       ::grpc::Service::MarkMethodAsync(0);
     }
-    ~WithAsyncMethod_MkDir() override {
+    ~WithAsyncMethod_Mkdir() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MkDir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkDirReq* /*request*/, ::unreliable_afs::MkDirReply* /*response*/) override {
+    ::grpc::Status Mkdir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkdirRequest* /*request*/, ::unreliable_afs::MkdirReply* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestMkDir(::grpc::ServerContext* context, ::unreliable_afs::MkDirReq* request, ::grpc::ServerAsyncResponseWriter< ::unreliable_afs::MkDirReply>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestMkdir(::grpc::ServerContext* context, ::unreliable_afs::MkdirRequest* request, ::grpc::ServerAsyncResponseWriter< ::unreliable_afs::MkdirReply>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_MkDir<Service > AsyncService;
+  typedef WithAsyncMethod_Mkdir<Service > AsyncService;
   template <class BaseClass>
-  class WithCallbackMethod_MkDir : public BaseClass {
+  class WithCallbackMethod_Mkdir : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithCallbackMethod_MkDir() {
+    WithCallbackMethod_Mkdir() {
       ::grpc::Service::MarkMethodCallback(0,
-          new ::grpc::internal::CallbackUnaryHandler< ::unreliable_afs::MkDirReq, ::unreliable_afs::MkDirReply>(
+          new ::grpc::internal::CallbackUnaryHandler< ::unreliable_afs::MkdirRequest, ::unreliable_afs::MkdirReply>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::unreliable_afs::MkDirReq* request, ::unreliable_afs::MkDirReply* response) { return this->MkDir(context, request, response); }));}
-    void SetMessageAllocatorFor_MkDir(
-        ::grpc::MessageAllocator< ::unreliable_afs::MkDirReq, ::unreliable_afs::MkDirReply>* allocator) {
+                   ::grpc::CallbackServerContext* context, const ::unreliable_afs::MkdirRequest* request, ::unreliable_afs::MkdirReply* response) { return this->Mkdir(context, request, response); }));}
+    void SetMessageAllocatorFor_Mkdir(
+        ::grpc::MessageAllocator< ::unreliable_afs::MkdirRequest, ::unreliable_afs::MkdirReply>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::unreliable_afs::MkDirReq, ::unreliable_afs::MkDirReply>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::unreliable_afs::MkdirRequest, ::unreliable_afs::MkdirReply>*>(handler)
               ->SetMessageAllocator(allocator);
     }
-    ~WithCallbackMethod_MkDir() override {
+    ~WithCallbackMethod_Mkdir() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MkDir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkDirReq* /*request*/, ::unreliable_afs::MkDirReply* /*response*/) override {
+    ::grpc::Status Mkdir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkdirRequest* /*request*/, ::unreliable_afs::MkdirReply* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* MkDir(
-      ::grpc::CallbackServerContext* /*context*/, const ::unreliable_afs::MkDirReq* /*request*/, ::unreliable_afs::MkDirReply* /*response*/)  { return nullptr; }
+    virtual ::grpc::ServerUnaryReactor* Mkdir(
+      ::grpc::CallbackServerContext* /*context*/, const ::unreliable_afs::MkdirRequest* /*request*/, ::unreliable_afs::MkdirReply* /*response*/)  { return nullptr; }
   };
-  typedef WithCallbackMethod_MkDir<Service > CallbackService;
+  typedef WithCallbackMethod_Mkdir<Service > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
   template <class BaseClass>
-  class WithGenericMethod_MkDir : public BaseClass {
+  class WithGenericMethod_Mkdir : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithGenericMethod_MkDir() {
+    WithGenericMethod_Mkdir() {
       ::grpc::Service::MarkMethodGeneric(0);
     }
-    ~WithGenericMethod_MkDir() override {
+    ~WithGenericMethod_Mkdir() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MkDir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkDirReq* /*request*/, ::unreliable_afs::MkDirReply* /*response*/) override {
+    ::grpc::Status Mkdir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkdirRequest* /*request*/, ::unreliable_afs::MkdirReply* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
   };
   template <class BaseClass>
-  class WithRawMethod_MkDir : public BaseClass {
+  class WithRawMethod_Mkdir : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawMethod_MkDir() {
+    WithRawMethod_Mkdir() {
       ::grpc::Service::MarkMethodRaw(0);
     }
-    ~WithRawMethod_MkDir() override {
+    ~WithRawMethod_Mkdir() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MkDir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkDirReq* /*request*/, ::unreliable_afs::MkDirReply* /*response*/) override {
+    ::grpc::Status Mkdir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkdirRequest* /*request*/, ::unreliable_afs::MkdirReply* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestMkDir(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestMkdir(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
-  class WithRawCallbackMethod_MkDir : public BaseClass {
+  class WithRawCallbackMethod_Mkdir : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithRawCallbackMethod_MkDir() {
+    WithRawCallbackMethod_Mkdir() {
       ::grpc::Service::MarkMethodRawCallback(0,
           new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->MkDir(context, request, response); }));
+                   ::grpc::CallbackServerContext* context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->Mkdir(context, request, response); }));
     }
-    ~WithRawCallbackMethod_MkDir() override {
+    ~WithRawCallbackMethod_Mkdir() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status MkDir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkDirReq* /*request*/, ::unreliable_afs::MkDirReply* /*response*/) override {
+    ::grpc::Status Mkdir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkdirRequest* /*request*/, ::unreliable_afs::MkdirReply* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerUnaryReactor* MkDir(
+    virtual ::grpc::ServerUnaryReactor* Mkdir(
       ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
-  class WithStreamedUnaryMethod_MkDir : public BaseClass {
+  class WithStreamedUnaryMethod_Mkdir : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
-    WithStreamedUnaryMethod_MkDir() {
+    WithStreamedUnaryMethod_Mkdir() {
       ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::unreliable_afs::MkDirReq, ::unreliable_afs::MkDirReply>(
+          ::unreliable_afs::MkdirRequest, ::unreliable_afs::MkdirReply>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::unreliable_afs::MkDirReq, ::unreliable_afs::MkDirReply>* streamer) {
-                       return this->StreamedMkDir(context,
+                     ::unreliable_afs::MkdirRequest, ::unreliable_afs::MkdirReply>* streamer) {
+                       return this->StreamedMkdir(context,
                          streamer);
                   }));
     }
-    ~WithStreamedUnaryMethod_MkDir() override {
+    ~WithStreamedUnaryMethod_Mkdir() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status MkDir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkDirReq* /*request*/, ::unreliable_afs::MkDirReply* /*response*/) override {
+    ::grpc::Status Mkdir(::grpc::ServerContext* /*context*/, const ::unreliable_afs::MkdirRequest* /*request*/, ::unreliable_afs::MkdirReply* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedMkDir(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::unreliable_afs::MkDirReq,::unreliable_afs::MkDirReply>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedMkdir(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::unreliable_afs::MkdirRequest,::unreliable_afs::MkdirReply>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_MkDir<Service > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_Mkdir<Service > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_MkDir<Service > StreamedService;
+  typedef WithStreamedUnaryMethod_Mkdir<Service > StreamedService;
 };
 
 }  // namespace unreliable_afs
