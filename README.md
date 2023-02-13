@@ -66,3 +66,14 @@ See documentation in [unreliablefs.1](https://ligurio.github.io/unreliablefs/unr
 - Kibosh - fault-injecting filesystem for Linux. It is written in C using
   FUSE, faults are injected by writing JSON to the control file.
 - chaos-mesh/toda - hook filesystem and utils to inject I/O chaos.
+
+
+
+
+# Gettings afs to work
+```
+$ cd unreliable
+$ protoc -I ../protos --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ../protos/unreliable_afs.proto
+$ protoc -I ../protos --cpp_out=. ../protos/unreliable_afs.proto
+$ make
+```
