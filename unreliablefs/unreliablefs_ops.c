@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-
 #include <sys/ioctl.h>
 #include <sys/file.h>
 #ifdef HAVE_XATTR
@@ -18,8 +17,7 @@
 
 #define ERRNO_NOOP -999
 
-#include "unreliablefs_ops.h"
-
+#include "unreliablefs_ops.h" 
 const char *fuse_op_name[] = {
     "getattr",
     "readlink",

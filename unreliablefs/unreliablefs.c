@@ -17,6 +17,7 @@ extern struct err_inj_q *config_init(const char* conf_path);
 extern void config_delete(struct err_inj_q *config);
 
 struct unreliablefs_config conf;
+// struct GreeterClient* greeter = NULL;  
 
 static struct fuse_operations unreliable_ops = {
     .getattr     = unreliable_getattr,
