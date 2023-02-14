@@ -249,7 +249,7 @@ static errinj_type errinj_type_by_name(const char *name)
             idx = i;
     }
 
-    return (errinj_type) idx;
+    return static_cast<errinj_type>(idx);
 }
 
 struct err_inj_q *config_init(const char* conf_path) {
@@ -310,7 +310,7 @@ int conf_option_handler(void* cfg, const char* section,
             perror("calloc");
             return -1;
         }
-        err->type = (errinj_type) cur_type;
+        err->type = static_cast<errinj_type>(cur_type);
     }
 
     if (is_errinj_found != 1) {
