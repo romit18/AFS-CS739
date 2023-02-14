@@ -205,7 +205,7 @@ int error_inject(const char* path, fuse_op operation)
         case ERRINJ_NOOP:
             rc = -ERRNO_NOOP;
             break;
-        case ERRINJ_KILL_CALLER: ;
+	case ERRINJ_KILL_CALLER: { ;
             struct fuse_context *cxt = fuse_get_context();
             if (cxt) {
                 int ret = kill(cxt->pid, DEFAULT_SIGNAL_NAME);
@@ -216,6 +216,7 @@ int error_inject(const char* path, fuse_op operation)
                                 strsignal(DEFAULT_SIGNAL_NAME), cxt->pid);
             }
             break;
+	}
         case ERRINJ_ERRNO:
             rc = op_random_errno(operation);
             fprintf(stdout, "errno '%s'\n", strerror(rc));
@@ -248,12 +249,12 @@ static errinj_type errinj_type_by_name(const char *name)
             idx = i;
     }
 
-    return idx;
+    return (errinj_type) idx;
 }
 
 struct err_inj_q *config_init(const char* conf_path) {
     fprintf(stdout, "read configuration %s\n", conf_path);
-    struct err_inj_q *errors = calloc(1, sizeof(struct err_inj_q));
+    struct err_inj_q *errors = (err_inj_q*) calloc(1, sizeof(struct err_inj_q));
     if (!errors) {
         perror("calloc");
         return NULL;
@@ -305,11 +306,11 @@ int conf_option_handler(void* cfg, const char* section,
         }
     }
     if (!err) {
-        if ((err = calloc(1, sizeof(struct errinj_conf))) == NULL) {
+        if ((err = (errinj_conf *) calloc(1, sizeof(struct errinj_conf))) == NULL) {
             perror("calloc");
             return -1;
         }
-        err->type = cur_type;
+        err->type = (errinj_type) cur_type;
     }
 
     if (is_errinj_found != 1) {

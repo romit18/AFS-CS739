@@ -12,6 +12,7 @@
 
 #include "unreliablefs_ops.h"
 #include "unreliablefs.h"
+#include "unreliable_afs_client.h"
 
 extern struct err_inj_q *config_init(const char* conf_path);
 extern void config_delete(struct err_inj_q *config);
@@ -57,6 +58,9 @@ static struct fuse_operations unreliable_ops = {
     .ftruncate   = unreliable_ftruncate,
     .fgetattr    = unreliable_fgetattr,
     .lock        = unreliable_lock,
+#ifdef HAVE_UTIMENSAT
+    .utimens     = unreliable_utimens,
+#endif /* HAVE_UTIMENSAT */
 #if !defined(__OpenBSD__)
     .ioctl       = unreliable_ioctl,
 #endif /* __OpenBSD__ */
@@ -66,9 +70,6 @@ static struct fuse_operations unreliable_ops = {
 #ifdef HAVE_FALLOCATE
     .fallocate   = unreliable_fallocate,
 #endif /* HAVE_FALLOCATE */
-#ifdef HAVE_UTIMENSAT
-    .utimens     = unreliable_utimens,
-#endif /* HAVE_UTIMENSAT */
 };
 
 enum {
@@ -156,7 +157,7 @@ int main(int argc, char *argv[])
     }
     conf.basedir = real_path;
     size_t sz = strlen(DEFAULT_CONF_NAME) + strlen(conf.basedir) + 2;
-    conf.config_path = malloc(sz);
+    conf.config_path = (char *) malloc(sz);
     if (!conf.config_path) {
         perror("malloc");
         fuse_opt_free_args(&args);
