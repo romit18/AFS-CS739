@@ -6,7 +6,7 @@
 #include <fuse.h>
 #include "unreliablefs.h"
 
-extern struct GreeterClient* greeterClient;
+extern struct UnreliableAFS* unreliableAFS;
 
 int unreliable_getattr(const char *, struct stat *);
 int unreliable_readlink(const char *, char *, size_t);

@@ -9,16 +9,16 @@
 extern "C" {
 #endif
 
-typedef struct GreeterClient GreeterClient;
-GreeterClient* NewGreeterClient();
+typedef struct UnreliableAFS UnreliableAFS;
+UnreliableAFS* NewUnreliableAFS();
 
-int Mkdir(GreeterClient*  greeterClient, const char* file_path, int mode);
-
+int Mkdir(UnreliableAFS*  unreliableAFS, const char* file_path, int mode);
+int Rmdir(UnreliableAFS*  unreliableAFS, const char* file_path)
 #ifdef __cplusplus
 }
 #endif
 
-extern struct GreeterClient* greeterClient;
+extern struct UnreliableAFS* unreliableAFS;
 
 typedef struct unreliablefs_config {
      struct err_inj_q *errors;

@@ -14,11 +14,13 @@ using grpc::Status;
 using unreliable_afs::UnreliableAFS;
 using unreliable_afs::MkdirRequest;
 using unreliable_afs::MkdirReply;
+using unreliable_afs::RmDirRequest;
+using unreliable_afs::RmDirReply;
 extern "C"{
-class GreeterClient {
+class UnreliableAFS {
 
     public:
-    GreeterClient(std::shared_ptr<Channel> channel)
+    UnreliableAFS(std::shared_ptr<Channel> channel)
         : stub_(UnreliableAFS::NewStub(channel)) {}
 
 
@@ -34,19 +36,34 @@ class GreeterClient {
         return status.ok() ? reply.err() : -1;
     }
 
+    int Rmdir(const std::string& path) {
+        RmDirRequest request;
+        request.set_path(path);
 
+        RmDirReply reply;
+        ClientContext context;
+        Status status = stub_->RmDir(&context, request, &reply);
+
+        return status.ok() ? reply.err() : -1;
+    }
+
+    
 
     private:
     std::unique_ptr<UnreliableAFS::Stub> stub_;
     
 };
 
-GreeterClient* NewGreeterClient(){
-  return new GreeterClient(grpc::CreateChannel("0.0.0.0:50051", grpc::InsecureChannelCredentials()));
+UnreliableAFS* NewUnreliableAFS(){
+  return new UnreliableAFS(grpc::CreateChannel("0.0.0.0:50051", grpc::InsecureChannelCredentials()));
 }
 
-int Mkdir(GreeterClient* greeterClient, const char* path, int mode){
-  return greeterClient->Mkdir(path, mode);
+int Mkdir(UnreliableAFS* UnreliableAFS, const char* path, int mode){
+  return UnreliableAFS->Mkdir(path, mode);
+}
+
+int Rmdir(UnreliableAFS* UnreliableAFS, const char* path){
+  return UnreliableAFS->Rmdir(path);
 }
 
 
@@ -77,7 +94,7 @@ int Mkdir(GreeterClient* greeterClient, const char* path, int mode){
 //   } else {
 //     target_str = "localhost:50051";
 //   }
-//   GreeterClient greeter(
+//   UnreliableAFS greeter(
 //       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 //   std::string dirpath("/world");
 //   int res = greeter.Mkdir(dirpath, 0777);

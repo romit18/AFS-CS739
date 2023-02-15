@@ -52,6 +52,25 @@ class UnreliableAFSServiceImpl final : public UnreliableAFS::Service {
             return Status::OK;
         }
 
+        Status RmDir(ServerContext* context, const RmDirReq* request,
+                RmDirReply* reply) override {
+            // default errno = 0
+            reply->set_err(0);
+            std::string path = path_prefix + request->path();
+            printf("Removing Directory: %s \n", path.c_str());
+            int res;
+
+            res = rmdir(path.c_str());
+            if (res == -1) {
+                reply->set_err(-errno);
+                return Status::OK;
+            }
+
+            reply->set_err(res);
+            return Status::OK;
+        }
+
+
 };
 
 void RunServer(std::string base_path_str) {

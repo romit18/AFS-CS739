@@ -148,7 +148,7 @@ int unreliable_mkdir(const char *path, mode_t mode)
         return ret;
     }
 
-    ret = Mkdir(greeterClient, path, mode);
+    ret = Mkdir(unreliableAFS, path, mode);
     if (ret == -1) {
         return -errno;
     }
@@ -182,7 +182,7 @@ int unreliable_rmdir(const char *path)
         return ret;
     }
 
-    ret = rmdir(path); 
+    ret = Rmdir(unreliableAFS, path); 
     if (ret == -1) {
         return -errno;
     }

@@ -17,3 +17,11 @@ message MkdirRequest {
 message MkdirReply {
     int32 err = 1;
 }
+
+message RmDirRequest {
+    string path = 1;
+}
+
+message RmDirReply {
+    int32 err = 1;
+}
