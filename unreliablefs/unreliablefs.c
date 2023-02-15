@@ -17,7 +17,7 @@ extern struct err_inj_q *config_init(const char* conf_path);
 extern void config_delete(struct err_inj_q *config);
 
 struct unreliablefs_config conf;
-struct GreeterClient* greeter = NULL;  
+struct GreeterClient* greeterClient = NULL;  
 
 static struct fuse_operations unreliable_ops = {
     .getattr     = unreliable_getattr,
@@ -132,7 +132,7 @@ int is_dir(const char *path) {
 
 int main(int argc, char *argv[])
 {
-    greeterClient = NewGreeterClient("0.0.0.0:50051");
+    greeterClient = NewGreeterClient();
     int x = Mkdir(greeterClient, "/world", 0777);
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     memset(&conf, 0, sizeof(conf));

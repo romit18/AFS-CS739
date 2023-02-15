@@ -42,6 +42,8 @@ class UnreliableAFSServiceImpl final : public UnreliableAFS::Service {
             int res;
 
             res = mkdir(path.c_str(), request->mode());
+            std::cout<<"Making result:"<<res<<std::endl;
+            std::cout<<"Request path:"<<request->path()<<std::endl;
             if (res == -1) {
                 reply->set_err(-errno);
                 return Status::OK;

@@ -10,9 +10,9 @@ extern "C" {
 #endif
 
 typedef struct GreeterClient GreeterClient;
-GreeterClient* NewGreeterClient(const char* host);
+GreeterClient* NewGreeterClient();
 
-int Mkdir(GreeterClient*  greeterClient, const char* file_path, struct fuse_file_info *fi);
+int Mkdir(GreeterClient*  greeterClient, const char* file_path, int mode);
 
 #ifdef __cplusplus
 }

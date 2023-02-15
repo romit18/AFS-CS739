@@ -41,11 +41,11 @@ class GreeterClient {
     
 };
 
-GreeterClient* NewGreeterClient(const char* host){
-  return new GreeterClient(grpc::CreateChannel(host, grpc::InsecureChannelCredentials()));
+GreeterClient* NewGreeterClient(){
+  return new GreeterClient(grpc::CreateChannel("0.0.0.0:50051", grpc::InsecureChannelCredentials()));
 }
 
-int Mkdir(GreeterClient* greeterClient, const std::string& path, int mode){
+int Mkdir(GreeterClient* greeterClient, const char* path, int mode){
   return greeterClient->Mkdir(path, mode);
 }
 
