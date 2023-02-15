@@ -95,10 +95,9 @@ int unreliable_getattr(const char *path, struct stat *buf)
     } else if (ret) {
         return ret;
     }
-    const char* rpcbuf;
     // std::string cpp_path = path;
 
-    int res = Getattr(unreliableAFS, path, rpcbuf);
+    int res = Getattr(unreliableAFS, path, buf);
     if (res < 0) {
         return res;
     }
@@ -578,16 +577,17 @@ int unreliable_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         return ret;
     }
 
-    DIR *dp = opendir(path);
-    if (dp == NULL) {
-	return -errno;
+    const char* directory;
+    int open = Opendir(unreliableAFS, path, directory);
+    if (open == -1) {
+	    return -1;
     }
     struct dirent *de;
 
     (void) offset;
     (void) fi;
 
-    while ((de = readdir(dp)) != NULL) {
+    while ((de = readdir(directory)) != NULL) {
         struct stat st;
         memset(&st, 0, sizeof(st));
         st.st_ino = de->d_ino;
@@ -595,8 +595,7 @@ int unreliable_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         if (filler(buf, de->d_name, &st, 0))
             break;
     }
-    closedir(dp);
-
+    closedir(directory);
     return 0;
 }
 

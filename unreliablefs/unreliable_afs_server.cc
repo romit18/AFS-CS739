@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <dirent.h>
 
 #include <grpc++/grpc++.h>
 
@@ -28,6 +29,10 @@ using unreliable_afs::RmdirRequest;
 using unreliable_afs::RmdirReply;
 using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
+// using reliable_afs::ReadDirRequest;
+// using reliable_afs::ReadDirRequest;
+using unreliable_afs::OpenDirRequest;
+using unreliable_afs::OpenDirReply;
 using unreliable_afs::UnreliableAFSProto;
 
 std::string server_base_directory;
@@ -97,6 +102,57 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             reply->set_err(res);
             return Status::OK;
         }
+
+        Status OpenDir(ServerContext* context, const OpenDirRequest* request,
+                OpenDirReply* reply) override {
+            // default errno = 0
+            reply->set_err(0);
+
+            std::string path = server_base_directory + request->path();
+            printf("OpenDir: %s \n", path.c_str());
+
+            DIR *dp;
+
+            dp = opendir(path.c_str());
+            std::string buf;
+            buf.resize(sizeof(DIR*));
+            memcpy(&buf[0], dp, buf.size());
+            if (dp == NULL) {
+                reply->set_err(-errno);
+                return Status::CANCELLED;
+            }
+            reply->set_dir(buf);
+            return Status::OK;
+        }
+
+        // Status ReadDir(ServerContext* context, const ReadDirRequest* request,
+        //         ServerWriter<ReadDirReply>* writer) override {
+        //     ReadDirReply* reply = new ReadDirReply();
+        //     // default errno = 0
+        //     reply->set_err(0);
+
+        //     std::string path = server_base_directory + request->path();
+        //     printf("ReadDir: %s \n", path.c_str());
+
+        //     DIR *dp;
+        //     struct dirent *de;
+
+        //     dp = opendir(path.c_str());
+        //     if (dp == NULL) {
+        //         reply->set_err(-errno);
+        //         return Status::OK;
+        //     }
+
+        //     while ((de = readdir(dp)) != NULL) {
+        //         std::string buf;
+        //         buf.resize(sizeof(struct dirent));
+        //         memcpy(&buf[0], de, buf.size());
+        //         reply->set_buf(buf);
+        //         writer->Write(*reply);
+        //     }
+        //     closedir(dp);
+        //     return Status::OK;
+        // }
 
 };
 

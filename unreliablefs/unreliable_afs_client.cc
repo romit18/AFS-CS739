@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 #include <grpc++/grpc++.h>
-
+#include <dirent.h>
 #include "unreliable_afs.grpc.pb.h"
 
 using grpc::Channel;
@@ -18,6 +18,8 @@ using unreliable_afs::RmdirRequest;
 using unreliable_afs::RmdirReply;
 using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
+using unreliable_afs::OpenDirRequest;
+using unreliable_afs::OpenDirReply;
 
 extern "C"{
 class UnreliableAFS {
@@ -50,7 +52,6 @@ class UnreliableAFS {
         return status.ok() ? reply.err() : -1;
     }
 
-    
     int GetAttr(const std::string& path, std::string buf){
         GetAttrRequest request;
         request.set_path(path);
@@ -60,6 +61,21 @@ class UnreliableAFS {
         Status status = stub_->GetAttr(&context, request, &reply);
         if (status.ok()) {
             buf = reply.buf();
+            return reply.err();
+        } else {
+            return -1;
+        }
+    }
+
+    int Opendir(const std::string& path, std::string directory){
+        OpenDirRequest request;
+        request.set_path(path);
+
+        OpenDirReply reply;
+        ClientContext context;
+        Status status = stub_->OpenDir(&context, request, &reply);
+        if (status.ok()) {
+            directory = reply.dir();
             return reply.err();
         } else {
             return -1;
@@ -85,6 +101,10 @@ int Rmdir(UnreliableAFS* unreliableAFS, const char* path){
 
 int Getattr(UnreliableAFS* unreliableAFS, const char* path, const char* stbuf){
   return unreliableAFS->GetAttr(path, stbuf);
+}
+
+int Opendir(UnreliableAFS* unreliableAFS, const char* path, const char* directory){
+  return unreliableAFS->GetAttr(path, directory);
 }
 
 // int main(int argc, char** argv) {
