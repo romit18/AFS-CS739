@@ -95,13 +95,21 @@ int unreliable_getattr(const char *path, struct stat *buf)
     } else if (ret) {
         return ret;
     }
+    const char* rpcbuf;
+    // std::string cpp_path = path;
 
-    memset(buf, 0, sizeof(struct stat));
-    if (lstat(path, buf) == -1) {
-        return -errno;
+    int res = Getattr(unreliableAFS, path, rpcbuf);
+    if (res < 0) {
+        return res;
     }
 
-    return 0;
+    memset(buf, 0, sizeof(struct stat)); 
+
+    // if (lstat(path, buf) == -1) {
+    //     return -errno;
+    //}
+    
+    return res;
 }
 
 int unreliable_readlink(const char *path, char *buf, size_t bufsiz)

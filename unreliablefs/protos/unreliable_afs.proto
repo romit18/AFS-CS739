@@ -5,9 +5,9 @@ option java_package = "edu.wisc.cs.unreliable_afs";
 package unreliable_afs;
 
 service UnreliableAFSProto {
-    // rpc GetAttr (GetAttrReq) returns (GetAttrReply) {}
     rpc Mkdir (MkdirRequest) returns (MkdirReply) {}
     rpc Rmdir (RmdirRequest) returns (RmdirReply) {}
+    rpc GetAttr (GetAttrRequest) returns (GetAttrReply) {}
 }
 
 message MkdirRequest {
@@ -25,4 +25,14 @@ message RmdirRequest {
 
 message RmdirReply {
     int32 err = 1;
+}
+
+message GetAttrRequest {
+    string path = 1;
+    bytes buf = 2; 
+}
+
+message GetAttrReply {
+    int32 err = 1;
+    bytes buf = 2; 
 }

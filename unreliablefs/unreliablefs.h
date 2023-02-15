@@ -14,6 +14,7 @@ UnreliableAFS* NewUnreliableAFS();
 
 int Mkdir(UnreliableAFS* unreliableAFS, const char* file_path, int mode);
 int Rmdir(UnreliableAFS* unreliableAFS, const char* file_path);
+int Getattr(UnreliableAFS* unreliableAFS, const char* path, const char* buf);
 #ifdef __cplusplus
 }
 #endif

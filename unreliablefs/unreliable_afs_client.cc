@@ -16,6 +16,9 @@ using unreliable_afs::MkdirRequest;
 using unreliable_afs::MkdirReply;
 using unreliable_afs::RmdirRequest;
 using unreliable_afs::RmdirReply;
+using unreliable_afs::GetAttrRequest;
+using unreliable_afs::GetAttrReply;
+
 extern "C"{
 class UnreliableAFS {
 
@@ -48,6 +51,20 @@ class UnreliableAFS {
     }
 
     
+    int GetAttr(const std::string& path, std::string buf){
+        GetAttrRequest request;
+        request.set_path(path);
+
+        GetAttrReply reply;
+        ClientContext context;
+        Status status = stub_->GetAttr(&context, request, &reply);
+        if (status.ok()) {
+            buf = reply.buf();
+            return reply.err();
+        } else {
+            return -1;
+        }
+    }
 
     private:
     std::unique_ptr<UnreliableAFSProto::Stub> stub_;
@@ -66,6 +83,9 @@ int Rmdir(UnreliableAFS* unreliableAFS, const char* path){
   return unreliableAFS->Rmdir(path);
 }
 
+int Getattr(UnreliableAFS* unreliableAFS, const char* path, const char* stbuf){
+  return unreliableAFS->GetAttr(path, stbuf);
+}
 
 // int main(int argc, char** argv) {
 //   // Instantiate the client. It requires a channel, out of which the actual RPCs
