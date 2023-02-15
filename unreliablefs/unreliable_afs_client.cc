@@ -52,7 +52,7 @@ class UnreliableAFS {
         return status.ok() ? reply.err() : -1;
     }
 
-    int GetAttr(const std::string& path, std::string buf){
+    int GetAttr(const std::string& path, struct stat *stbuf){
         GetAttrRequest request;
         request.set_path(path);
 
@@ -60,14 +60,14 @@ class UnreliableAFS {
         ClientContext context;
         Status status = stub_->GetAttr(&context, request, &reply);
         if (status.ok()) {
-            buf = reply.buf();
+            memcpy(stbuf, (struct stat *)(reply.buf()).data(), sizeof(struct stat*));
             return reply.err();
         } else {
             return -1;
         }
     }
 
-    int Opendir(const std::string& path, std::string directory){
+    int Opendir(const std::string& path, DIR* directory){
         OpenDirRequest request;
         request.set_path(path);
 
@@ -75,7 +75,8 @@ class UnreliableAFS {
         ClientContext context;
         Status status = stub_->OpenDir(&context, request, &reply);
         if (status.ok()) {
-            directory = reply.dir();
+            memcpy(directory, (DIR*)reply.dir().data(), sizeof(DIR*));
+            directory = (DIR *)reply.dir().data();
             return reply.err();
         } else {
             return -1;
@@ -99,12 +100,12 @@ int Rmdir(UnreliableAFS* unreliableAFS, const char* path){
   return unreliableAFS->Rmdir(path);
 }
 
-int Getattr(UnreliableAFS* unreliableAFS, const char* path, const char* stbuf){
+int Getattr(UnreliableAFS* unreliableAFS, const char* path, struct stat* stbuf){
   return unreliableAFS->GetAttr(path, stbuf);
 }
 
-int Opendir(UnreliableAFS* unreliableAFS, const char* path, const char* directory){
-  return unreliableAFS->GetAttr(path, directory);
+int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory){
+  return unreliableAFS->Opendir(path, directory);
 }
 
 // int main(int argc, char** argv) {

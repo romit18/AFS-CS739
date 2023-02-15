@@ -3,7 +3,7 @@
 
 #include <limits.h> /* PATH_MAX */
 #include <pthread.h>
-
+#include <dirent.h>
 #define DEFAULT_CONF_NAME "unreliablefs.conf"
 #ifdef __cplusplus
 extern "C" {
@@ -14,8 +14,8 @@ UnreliableAFS* NewUnreliableAFS();
 
 int Mkdir(UnreliableAFS* unreliableAFS, const char* file_path, int mode);
 int Rmdir(UnreliableAFS* unreliableAFS, const char* file_path);
-int Getattr(UnreliableAFS* unreliableAFS, const char* path, const char* buf);
-int Opendir(UnreliableAFS* unreliableAFS, const char* path, const char* directory);
+int Getattr(UnreliableAFS* unreliableAFS, const char* path, struct stat* buf);
+int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory);
 #ifdef __cplusplus
 }
 #endif

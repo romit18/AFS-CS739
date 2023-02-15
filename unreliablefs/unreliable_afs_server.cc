@@ -94,9 +94,9 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
                 return Status::OK;
             } 
             std::string buf;
-            int stat_size = sizeof(struct stat);
+            int stat_size = sizeof(struct stat*);
             buf.resize(stat_size);
-            assert(buf.size() == sizeof(struct stat));
+            assert(buf.size() == sizeof(struct stat*));
             memcpy(&buf[0], &stbuf, buf.size());
             reply->set_buf(buf);    
             reply->set_err(res);
