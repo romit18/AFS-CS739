@@ -24,11 +24,13 @@ using grpc::Status;
 
 using unreliable_afs::MkdirRequest;
 using unreliable_afs::MkdirReply;
-using unreliable_afs::UnreliableAFS;
+using unreliable_afs::RmdirRequest;
+using unreliable_afs::RmdirReply;
+using unreliable_afs::UnreliableAFSProto;
 
 std::string server_base_directory;
 
-class UnreliableAFSServiceImpl final : public UnreliableAFS::Service {
+class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
     public:
         UnreliableAFSServiceImpl() {
         }
@@ -52,11 +54,11 @@ class UnreliableAFSServiceImpl final : public UnreliableAFS::Service {
             return Status::OK;
         }
 
-        Status RmDir(ServerContext* context, const RmDirReq* request,
-                RmDirReply* reply) override {
+        Status Rmdir(ServerContext* context, const RmdirRequest* request,
+                RmdirReply* reply) override {
             // default errno = 0
             reply->set_err(0);
-            std::string path = path_prefix + request->path();
+            std::string path = server_base_directory + request->path();
             printf("Removing Directory: %s \n", path.c_str());
             int res;
 

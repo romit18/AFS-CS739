@@ -12,8 +12,8 @@ extern "C" {
 typedef struct UnreliableAFS UnreliableAFS;
 UnreliableAFS* NewUnreliableAFS();
 
-int Mkdir(UnreliableAFS*  unreliableAFS, const char* file_path, int mode);
-int Rmdir(UnreliableAFS*  unreliableAFS, const char* file_path)
+int Mkdir(UnreliableAFS* unreliableAFS, const char* file_path, int mode);
+int Rmdir(UnreliableAFS* unreliableAFS, const char* file_path);
 #ifdef __cplusplus
 }
 #endif

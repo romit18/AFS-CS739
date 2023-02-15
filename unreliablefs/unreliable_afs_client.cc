@@ -11,17 +11,17 @@ using grpc::ClientReader;
 using grpc::ClientWriter;
 using grpc::Status;
 
-using unreliable_afs::UnreliableAFS;
+using unreliable_afs::UnreliableAFSProto;
 using unreliable_afs::MkdirRequest;
 using unreliable_afs::MkdirReply;
-using unreliable_afs::RmDirRequest;
-using unreliable_afs::RmDirReply;
+using unreliable_afs::RmdirRequest;
+using unreliable_afs::RmdirReply;
 extern "C"{
 class UnreliableAFS {
 
     public:
     UnreliableAFS(std::shared_ptr<Channel> channel)
-        : stub_(UnreliableAFS::NewStub(channel)) {}
+        : stub_(UnreliableAFSProto::NewStub(channel)) {}
 
 
     int Mkdir(const std::string& path, int mode) {
@@ -37,12 +37,12 @@ class UnreliableAFS {
     }
 
     int Rmdir(const std::string& path) {
-        RmDirRequest request;
+        RmdirRequest request;
         request.set_path(path);
 
-        RmDirReply reply;
+        RmdirReply reply;
         ClientContext context;
-        Status status = stub_->RmDir(&context, request, &reply);
+        Status status = stub_->Rmdir(&context, request, &reply);
 
         return status.ok() ? reply.err() : -1;
     }
@@ -50,7 +50,7 @@ class UnreliableAFS {
     
 
     private:
-    std::unique_ptr<UnreliableAFS::Stub> stub_;
+    std::unique_ptr<UnreliableAFSProto::Stub> stub_;
     
 };
 
@@ -58,12 +58,12 @@ UnreliableAFS* NewUnreliableAFS(){
   return new UnreliableAFS(grpc::CreateChannel("0.0.0.0:50051", grpc::InsecureChannelCredentials()));
 }
 
-int Mkdir(UnreliableAFS* UnreliableAFS, const char* path, int mode){
-  return UnreliableAFS->Mkdir(path, mode);
+int Mkdir(UnreliableAFS* unreliableAFS, const char* path, int mode){
+  return unreliableAFS->Mkdir(path, mode);
 }
 
-int Rmdir(UnreliableAFS* UnreliableAFS, const char* path){
-  return UnreliableAFS->Rmdir(path);
+int Rmdir(UnreliableAFS* unreliableAFS, const char* path){
+  return unreliableAFS->Rmdir(path);
 }
 
 

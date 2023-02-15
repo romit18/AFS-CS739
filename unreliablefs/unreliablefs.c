@@ -133,7 +133,7 @@ int is_dir(const char *path) {
 int main(int argc, char *argv[])
 {
     unreliableAFS = NewUnreliableAFS();
-    int x = Mkdir(unreliableAFS, "/world", 0777);
+    Mkdir(unreliableAFS, "/world", 0777);
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     memset(&conf, 0, sizeof(conf));
     conf.seed = time(0);
