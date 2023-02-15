@@ -5,6 +5,20 @@
 #include <pthread.h>
 
 #define DEFAULT_CONF_NAME "unreliablefs.conf"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct GreeterClient GreeterClient;
+GreeterClient* NewGreeterClient(const char* host);
+
+int Mkdir(GreeterClient*  greeterClient, const char* file_path, struct fuse_file_info *fi);
+
+#ifdef __cplusplus
+}
+#endif
+
+extern struct GreeterClient* greeterClient;
 
 typedef struct unreliablefs_config {
      struct err_inj_q *errors;

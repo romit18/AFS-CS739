@@ -148,7 +148,7 @@ int unreliable_mkdir(const char *path, mode_t mode)
         return ret;
     }
 
-    ret = mkdir(path, mode);
+    ret = Mkdir(greeterClient, path, mode);
     if (ret == -1) {
         return -errno;
     }

@@ -5,9 +5,6 @@ include(CheckFunctionExists)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/unreliablefs/cmake;${CMAKE_MODULE_PATH}")
 find_package(FUSE 2.9 REQUIRED)
-# Minimum CMake required
-cmake_minimum_required(VERSION 3.15)
-
 # Project
 project(afs)
 
@@ -30,7 +27,7 @@ get_filename_component(hw_proto_path "${hw_proto}" PATH)
 set(UNRELIABLEFS_SRC conf.c
                      unreliablefs.c
                      unreliablefs_errinj.c
-                     unreliablefs_ops.c unreliable_afs_client.cpp unreliable_afs_client.h) 
+                     unreliablefs_ops.c unreliable_afs_client.cc) 
 # Generated sources
 set(hw_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/unreliable_afs.pb.cc")
 set(hw_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/unreliable_afs.pb.h")
@@ -57,24 +54,24 @@ target_link_libraries(afs_grpc_proto
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 # Targets (client|server)
-# add_definitions(${FUSE_DEFINITIONS})
-# set(AFS_CLIENT_EXECUTABLE unreliable_afs_client)
+add_definitions(${FUSE_DEFINITIONS})
+set(AFS_CLIENT_EXECUTABLE unreliable_afs_client)
 set(AFS_SERVER_EXECUTABLE unreliable_afs_server)
-# add_executable(${AFS_CLIENT_EXECUTABLE} ${UNRELIABLEFS_SRC})
-# target_include_directories(${AFS_CLIENT_EXECUTABLE} PRIVATE ${FUSE_INCLUDE_DIRS})
-# target_link_libraries(${AFS_CLIENT_EXECUTABLE} ${FUSE_LIBRARIES} afs_grpc_proto ${_REFLECTION} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
+add_executable(${AFS_CLIENT_EXECUTABLE} ${UNRELIABLEFS_SRC})
+target_include_directories(${AFS_CLIENT_EXECUTABLE} PRIVATE ${FUSE_INCLUDE_DIRS})
+target_link_libraries(${AFS_CLIENT_EXECUTABLE} ${FUSE_LIBRARIES} afs_grpc_proto ${_REFLECTION} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 
-add_executable(${AFS_SERVER_EXECUTABLE} unreliable_afs_server.cpp)
+add_executable(${AFS_SERVER_EXECUTABLE} unreliable_afs_server.cc)
 target_link_libraries(${AFS_SERVER_EXECUTABLE} afs_grpc_proto ${_REFLECTION} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 
 
-add_definitions(${FUSE_DEFINITIONS})
-add_executable(${PROJECT_NAME} ${UNRELIABLEFS_SRC})
-target_include_directories(${PROJECT_NAME} PRIVATE ${FUSE_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${afs_grpc_proto} ${FUSE_LIBRARIES} ${_REFLECTION} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
+# add_definitions(${FUSE_DEFINITIONS})
+# add_executable(${PROJECT_NAME} ${UNRELIABLEFS_SRC})
+# target_include_directories(${PROJECT_NAME} PRIVATE ${FUSE_INCLUDE_DIRS})
+# target_link_libraries(${PROJECT_NAME} ${afs_grpc_proto} ${FUSE_LIBRARIES} ${_REFLECTION} ${_GRPC_GRPCPP} ${_PROTOBUF_LIBPROTOBUF})
 
-target_compile_options(${PROJECT_NAME} PUBLIC -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Wno-unused-parameter)
-target_compile_options(${PROJECT_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++11 -D_FILE_OFFSET_BITS=64>)
+target_compile_options(${AFS_CLIENT_EXECUTABLE} PUBLIC -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Wno-unused-parameter)
+target_compile_options(${AFS_CLIENT_EXECUTABLE} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++11 -D_FILE_OFFSET_BITS=64>)
 
 target_compile_options(${AFS_SERVER_EXECUTABLE} PUBLIC -D_FILE_OFFSET_BITS=64 -Wall -Wextra -Wno-unused-parameter)
 target_compile_options(${AFS_SERVER_EXECUTABLE} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:-std=c++11 -D_FILE_OFFSET_BITS=64>)
