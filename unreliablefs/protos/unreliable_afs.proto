@@ -56,3 +56,24 @@ message OpenDirReply {
     int32 err = 1;
     bytes dir = 2;
 }
+
+message OpenRequest {
+  string path = 1;
+  // int32 flags = 2;
+  // int32 mode = 3;
+}
+
+message OpenReply {
+  int32 err = 1;
+  bytes file = 2;
+  int32 num_bytes = 3;
+}
+
+message CloseRequest {
+  string path = 1;
+  bytes file = 2;
+}
+
+message CloseReply {
+  int32 err = 1;
+}

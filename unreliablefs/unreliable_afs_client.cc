@@ -3,6 +3,7 @@
 #include <string>
 #include <grpc++/grpc++.h>
 #include <dirent.h>
+#include <time.h>
 #include "unreliable_afs.grpc.pb.h"
 
 using grpc::Channel;
@@ -20,6 +21,23 @@ using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
 using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
+
+// Useful for create - mkdir if it doesn't exist
+// Source: https://stackoverflow.com/a/9210960
+int mkpath(char* file_path, mode_t mode) {
+    assert(file_path && *file_path);
+    for (char* p = strchr(file_path + 1, '/'); p; p = strchr(p + 1, '/')) {
+        *p = '\0';
+        if (mkdir(file_path, mode) == -1) {
+            if (errno != EEXIST) {
+                *p = '/';
+                return -1;
+            }
+        }
+        *p = '/';
+    }
+    return 0;
+}
 
 extern "C"{
 class UnreliableAFS {
@@ -81,6 +99,112 @@ class UnreliableAFS {
         } else {
             return -1;
         }
+    }
+
+    int Open(const std::string& path, flags){
+    // Open logic:
+    // Issue getattr. If the file doesn't exist on server,
+    // but exists locally, open - otherwise throw error
+    // If it exists on server, also run getattr locally
+    // If it doesn't exist in cache, fetch
+    // Compare the attributes. If modified time on server
+    // is after modified time on client, fetch
+    // Otherwise, local copy is up to date, return 0
+    // If it doesn't exist, return error
+        OpenRequest request;
+        request.set_path(path);
+        // request.set_flags(flags);
+
+        struct stat rpcbuf;
+
+        int ret = GetAttr(path, &rpcbuf);
+        if (ret < 0) {
+            rc = open(path, fi->flags);
+            if (rc == -1) {
+                return rc;
+            }
+        }
+
+        OpenReply reply;
+        ClientContext context;
+        struct stat file_stats;
+        int local_res = lstat(path, &file_stats);
+	// If modified time at server is after modified time at client,
+	// or if file is not present in cache, fetch it to cache
+	if ((difftime(rpcbuf.st_mtime, local_res.st_mtime) > 0) || ((local_res == -1) && (errno == ENOENT))){
+	    // Fetch from server
+            Status status = stub_->Open(&context, request, &reply);
+            if (status.ok()) {
+		// Allocate space for fetched file and fetch
+		char* fetched_file = (char *) malloc(reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file(), reply.num_bytes());
+		// Create directories in path (if not present) and write file
+                mkpath(path, 0755);
+		int new_file = open(path, fi->flags | O_CREAT, 0644);
+		write(new_file, fetched_file, reply.num_bytes());
+		// Reset file offset of open fd
+		lseek(new_file, SEEK_SET, 0);
+		// Return fd
+		return new_file;
+                // return reply.err();
+            } else {
+                return -1;
+            }
+	} else if(difftime(rpcbuf.st_mtime, local_res.st_mtime) <= 0) {
+		return 0;
+	}
+
+    }
+
+    int Create(const std::string& path, int flags, int mode){
+    // Create logic:
+    // Issue getattr. If the file doesn't exist on server,
+    // create it locally, and flush on close
+    // If it exists on server, also run getattr locally
+    // If it doesn't exist, fetch
+    // Compare the attributes. We should not have to check for
+    // modified time on server being after modified time on client
+    // since create is only called for new files
+        OpenRequest request;
+        request.set_path(path);
+        // request.set_flags(flags);
+        // request.set_mode(mode);
+
+        struct stat rpcbuf;
+
+        int ret = GetAttr(path, &rpcbuf);
+        if (ret < 0){
+            mkpath(path, mode);
+            rc = open(path, fi->flags, mode);
+            if (rc == -1) {
+                return rc;
+            }
+        }
+
+        OpenReply reply;
+        ClientContext context;
+        struct stat file_stats;
+        int local_res = lstat(path, &file_stats);
+	if ((local_res == -1) && (errno == ENOENT)) {
+	    // Fetch from server
+            Status status = stub_->Open(&context, request, &reply);
+            if (status.ok()) {
+		// Allocate space for fetched file and fetch
+		char* fetched_file = (char *) malloc(reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file(), reply.num_bytes());
+		// Create directories in path (if not present) and write file
+                mkpath(path, 0755);
+		int new_file = open(path, fi->flags | O_CREAT, 0644);
+		write(new_file, fetched_file, reply.num_bytes());
+		// Reset file offset of open fd
+		lseek(new_file, SEEK_SET, 0);
+		// Return fd
+		return new_file;
+                // return reply.err();
+            } else {
+                return -1;
+            }
+	}
     }
 
     private:

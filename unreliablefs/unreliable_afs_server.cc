@@ -154,6 +154,50 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
         //     return Status::OK;
         // }
 
+        Status Open(ServerContext* context, const OpenRequest* request,
+                OpenReply* reply) override {
+            reply->set_err(0);
+            std::string path = server_base_directory + request->path();
+            std::cout<<"Opening File:"<<path<<std::endl;
+            int res;
+
+            res = open(path.c_str(), request->flags(), request->mode());
+            if (res == -1) {
+                reply->set_err(-errno);
+                return Status::OK;
+            }
+
+	    struct stat file_info;
+	    fstat(res, &file_info);
+	    off_t file_size = file_info.st_size;
+	    (char *) buf = (char *) malloc(file_size);
+	    pread(res, buf, file_size, 0);
+	    close(res);
+
+	    reply->set_err(0);
+	    reply->set_file(std::string(buf, file_size));
+	    reply->set_num_bytes(file_size);
+
+	    return Status::OK;
+        }
+
+	// FIXME: Needs to be implemented
+        Status Close(ServerContext* context, const CloseRequest* request,
+                CloseReply* reply) override {
+            reply->set_err(0);
+            std::string path = server_base_directory + request->path();
+            std::cout<<"Closing File:"<<path<<std::endl;
+            int res;
+
+            res = rmdir(path.c_str());
+            if (res == -1) {
+                reply->set_err(-errno);
+                return Status::OK;
+            }
+
+            reply->set_err(res);
+        }
+
 };
 
 void RunServer(std::string base_path_str) {
