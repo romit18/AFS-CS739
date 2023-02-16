@@ -121,8 +121,9 @@ class UnreliableAFS {
         if (ret < 0) {
             rc = open(path, fi->flags);
             if (rc == -1) {
-                return rc;
+                return -errno;
             }
+            return rc;
         }
 
         OpenReply reply;
@@ -151,7 +152,7 @@ class UnreliableAFS {
                 return -1;
             }
 	} else if(difftime(rpcbuf.st_mtime, local_res.st_mtime) <= 0) {
-		return 0;
+		return open(path, fi->flags);
 	}
 
     }
@@ -177,8 +178,9 @@ class UnreliableAFS {
             mkpath(path, mode);
             rc = open(path, fi->flags, mode);
             if (rc == -1) {
-                return rc;
+                return -errno;
             }
+            return rc;
         }
 
         OpenReply reply;
