@@ -4,6 +4,8 @@
 #include <grpc++/grpc++.h>
 #include <dirent.h>
 #include <time.h>
+#include <limits.h>
+#include <libgen.h>
 #include "unreliable_afs.grpc.pb.h"
 
 using grpc::Channel;
@@ -123,6 +125,7 @@ class UnreliableAFS {
 
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0) {
+	    // Do we delete the file if it is a stale copy, or do we keep it if it was newly created?
             rc = open(path, fi->flags);
             if (rc == -1) {
                 return -errno;
@@ -143,6 +146,7 @@ class UnreliableAFS {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file(), reply.num_bytes());
+		// FIXME: This needs to be updated to be done safely
 		// remove previous copy and write updated file
 		// overwriting is risky because we need to account for cases
 		// such as the new copy being smaller than the previous one
@@ -197,6 +201,16 @@ class UnreliableAFS {
         // request.set_mode(mode);
 
         struct stat rpcbuf;
+
+	// Check if the directory in which this file
+	// supposedly resides exists on server.
+	// If it doesn't, return.
+	char file_dirname[PATH_MAX];
+	file_dirname = dirname(path);
+	int directory_exist = GetAttr(file_dirname, &rpcbuf);
+	if (directory_exist < 0) {
+		return -errno;
+	}
 
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0){
