@@ -21,6 +21,10 @@ using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
 using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
+using unreliable_afs::OpenRequest;
+using unreliable_afs::OpenReply;
+using unreliable_afs::CreateRequest;
+using unreliable_afs::CreateReply;
 
 // Useful for create - mkdir if it doesn't exist
 // Source: https://stackoverflow.com/a/9210960
@@ -101,7 +105,7 @@ class UnreliableAFS {
         }
     }
 
-    int Open(const std::string& path, flags){
+    int Open(const std::string& path, int flags){
     // Open logic:
     // Issue getattr. If the file doesn't exist on server,
     // but exists locally, open - otherwise throw error
@@ -132,7 +136,28 @@ class UnreliableAFS {
         int local_res = lstat(path, &file_stats);
 	// If modified time at server is after modified time at client,
 	// or if file is not present in cache, fetch it to cache
-	if ((difftime(rpcbuf.st_mtime, local_res.st_mtime) > 0) || ((local_res == -1) && (errno == ENOENT))){
+	if (difftime(rpcbuf.st_mtime, local_res.st_mtime) > 0){
+	    // Fetch from server
+            Status status = stub_->Open(&context, request, &reply);
+            if (status.ok()) {
+		// Allocate space for fetched file and fetch
+		char* fetched_file = (char *) malloc(reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file(), reply.num_bytes());
+		// remove previous copy and write updated file
+		// overwriting is risky because we need to account for cases
+		// such as the new copy being smaller than the previous one
+		unlink(path);
+		int new_file = open(path, fi->flags | O_CREAT, 0644);
+		write(new_file, fetched_file, reply.num_bytes());
+		// Reset file offset of open fd
+		lseek(new_file, SEEK_SET, 0);
+		// Return fd
+		return new_file;
+                // return reply.err();
+            } else {
+                return -1;
+            }
+	} else if ((local_res == -1) && (errno == ENOENT)){
 	    // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {
@@ -232,6 +257,14 @@ int Getattr(UnreliableAFS* unreliableAFS, const char* path, struct stat* stbuf){
 
 int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory){
   return unreliableAFS->Opendir(path, directory);
+}
+
+int Open(UnreliableAFS* unreliableAFS, const char* path, int flags){
+  return unreliableAFS->Open(path, flags);
+}
+
+int Create(UnreliableAFS* unreliableAFS, const char* path, int flags, int mode){
+  return unreliableAFS->Create(path, flags, mode);
 }
 
 // int main(int argc, char** argv) {

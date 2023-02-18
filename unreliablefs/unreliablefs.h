@@ -16,6 +16,8 @@ int Mkdir(UnreliableAFS* unreliableAFS, const char* file_path, int mode);
 int Rmdir(UnreliableAFS* unreliableAFS, const char* file_path);
 int Getattr(UnreliableAFS* unreliableAFS, const char* path, struct stat* buf);
 int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory);
+int Open(UnreliableAFS* unreliableAFS, const char* path, int flags);
+int Create(UnreliableAFS* unreliableAFS, const char* path, int flags, int mode);
 #ifdef __cplusplus
 }
 #endif
