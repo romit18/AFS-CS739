@@ -35,6 +35,8 @@ using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
 using unreliable_afs::OpenRequest;
 using unreliable_afs::OpenReply;
+using unreliable_afs::CloseRequest;
+using unreliable_afs::CloseReply;
 using unreliable_afs::UnreliableAFSProto;
 
 std::string server_base_directory;
@@ -184,24 +186,60 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 	    return Status::OK;
         }
 
-	// FIXME: Needs to be implemented
-	/*
         Status Close(ServerContext* context, const CloseRequest* request,
                 CloseReply* reply) override {
             reply->set_err(0);
             std::string path = server_base_directory + request->path();
-            std::cout<<"Closing File:"<<path<<std::endl;
+            std::cout<<"Server closing File:"<<path<<std::endl;
             int res;
 
-            res = rmdir(path.c_str());
-            if (res == -1) {
-                reply->set_err(-errno);
+	    // Check if directory we're writing to exists
+	    char * file_dirname = (char *) malloc(PATH_MAX);
+	    file_dirname = dirname(const_cast<char*>(path.c_str()));
+	    struct stat dir_stats;
+	    res = lstat(dirname, &dir_stats);
+	    if (res == -1) {
+		reply->set_err(-errno);
                 return Status::OK;
-            }
+	    }
 
-            reply->set_err(res);
+	    struct stat file_stats;
+	    res = lstat(path.c_str(), &file_stats);
+	    if ((res == -1) && (errno == ENOENT)){
+		int num_bytes = request->num_bytes();
+		char* fetched_file = (char *) malloc(num_bytes);
+		memcpy(fetched_file, (char *)request->file().c_str(), num_bytes());
+		int new_file = open(path.c_str(), O_RDWR | O_CREAT, 0777);
+		// int new_file = open(path.c_str(), O_RDWR | O_CREAT, 0664);
+		write(new_file, fetched_file, num_bytes);
+		lseek(new_file, SEEK_SET, 0);
+		rc = close(new_file);
+            } else if (res == 0) {
+		// Create a temporary file
+		char * tmp_path = malloc(path.size() + 8);
+		snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
+		int num_bytes = request->num_bytes();
+		char* fetched_file = (char *) malloc(num_bytes);
+		memcpy(fetched_file, (char *)request->file().c_str(), num_bytes());
+		int new_file = open(tmp_path, O_RDWR | O_CREAT, 0777);
+		// int new_file = open(tmp_path, O_RDWR | O_CREAT, 0664);
+		write(new_file, fetched_file, num_bytes);
+		unlink(path.c_str());
+		rename(tmp_path, path.c_str());
+		lseek(new_file, SEEK_SET, 0);
+		rc = close(new_file);
+	    } else {
+		reply->set_err(-errno);
+                return Status::OK;
+	    }
+
+	    if (rc == -1) {
+                reply->set_err(-errno);
+	    } else {
+                reply->set_err(0);
+	    }
+            return Status::OK;
         }
-	*/
 
 };
 

@@ -27,6 +27,8 @@ using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
 using unreliable_afs::OpenRequest;
 using unreliable_afs::OpenReply;
+using unreliable_afs::CloseRequest;
+using unreliable_afs::CloseReply;
 
 // Useful for create - mkdir if it doesn't exist
 // Source: https://stackoverflow.com/a/9210960
@@ -125,11 +127,14 @@ class UnreliableAFS {
 
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0) {
-	    // Do we delete the file if it is a stale copy, or do we keep it if it was newly created?
+	    // We delete the file if it is a stale copy
+	    // If it was newly created we cannot access, since O_EXCL was used
             int rc = open(path.c_str(), flags);
-            if (rc == -1) {
+            if ((rc == -1 ) && (errno == EEXIST)) {
                 return -errno;
-            }
+            } else {
+		unlink(path.c_str());
+	    }
             return rc;
         }
 
@@ -140,19 +145,22 @@ class UnreliableAFS {
 	// If modified time at server is after modified time at client,
 	// or if file is not present in cache, fetch it to cache
 	if (difftime(rpcbuf.st_mtime, file_stats.st_mtime) > 0){
+	    char * tmp_path = malloc(path.size() + 8);
+	    snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
 	    // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().c_str(), reply.num_bytes());
-		// FIXME: This needs to be updated to be done safely
 		// remove previous copy and write updated file
-		// overwriting is risky because we need to account for cases
-		// such as the new copy being smaller than the previous one
-		unlink(path.c_str());
-		int new_file = open(path.c_str(), flags | O_CREAT, 0644);
+		// write new file to temporary copy, then unlink
+		// old copy and rename temporary copy to new file
+		// int new_file = open(tmp_path, flags | O_CREAT, 0644);
+		int new_file = open(tmp_path, flags | O_CREAT, 0777);
 		write(new_file, fetched_file, reply.num_bytes());
+		unlink(path.c_str());
+		rename(tmp_path, path.c_str());
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
 		// Return fd
@@ -169,8 +177,9 @@ class UnreliableAFS {
 		char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().c_str(), reply.num_bytes());
 		// Create directories in path (if not present) and write file
-                mkpath(const_cast<char*>(path.c_str()), 0755);
-		int new_file = open(path.c_str(), flags | O_CREAT, 0644);
+                mkpath(const_cast<char*>(path.c_str()), 0777);
+		int new_file = open(path.c_str(), flags | O_CREAT, 0777);
+		// int new_file = open(path.c_str(), flags | O_CREAT, 0644);
 		write(new_file, fetched_file, reply.num_bytes());
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
@@ -214,7 +223,8 @@ class UnreliableAFS {
 
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0){
-            mkpath(const_cast<char*>(path.c_str()), mode);
+            mkpath(const_cast<char*>(path.c_str()), 777);
+            // mkpath(const_cast<char*>(path.c_str()), mode);
             int rc = open(path.c_str(), flags, mode);
             if (rc == -1) {
                 return -errno;
@@ -234,8 +244,8 @@ class UnreliableAFS {
 		char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().c_str(), reply.num_bytes());
 		// Create directories in path (if not present) and write file
-                mkpath(const_cast<char*>(path.c_str()), 0755);
-		int new_file = open(path.c_str(), flags | O_CREAT, mode);
+                mkpath(const_cast<char*>(path.c_str()), 0777);
+		int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, mode);
 		write(new_file, fetched_file, reply.num_bytes());
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
@@ -246,6 +256,36 @@ class UnreliableAFS {
                 return -1;
             }
 	}
+    }
+
+    int Close(const std::string& path, int fd){
+        CloseRequest request;
+        request.set_path(path);
+	std::cout<<"Closing File:"<<path<<std::endl;
+	int res;
+
+	res = fsync(fd);
+	if (res == -1) {
+            return -errno;
+	}
+
+	struct stat file_info;
+	res = fstat(fd, &file_info);
+	if (res == -1) {
+            return -errno;
+	}
+
+	off_t file_size = file_info.st_size;
+	char * buf = (char *) malloc(file_size);
+	pread(fd, buf, file_size, 0);
+	close(fd);
+
+        request.set_path(path);
+	request.set_file(std::string(buf, file_size));
+	request.set_num_bytes(file_size);
+
+        Status status = stub_->Close(&context, request, &reply);
+        return status.ok() ? reply.err() : -1;
     }
 
     private:
@@ -279,6 +319,10 @@ int Open(UnreliableAFS* unreliableAFS, const char* path, int flags){
 
 int Create(UnreliableAFS* unreliableAFS, const char* path, int flags, int mode){
   return unreliableAFS->Create(path, flags, mode);
+}
+
+int Close(UnreliableAFS* unreliableAFS, const char* path, int fd){
+  return unreliableAFS->Close(path, fd);
 }
 
 // int main(int argc, char** argv) {
