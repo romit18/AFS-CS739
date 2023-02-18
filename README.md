@@ -42,7 +42,7 @@ $ cat << EOF > /tmp/fs/unreliablefs.conf
 [errinj_noop]
 op_regexp = .*
 path_regexp = .*
-probability = 30
+probability = 0
 EOF
 $ ls -la
 $ umount /tmp/fs
