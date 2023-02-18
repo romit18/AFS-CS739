@@ -10,6 +10,7 @@ service UnreliableAFSProto {
     rpc GetAttr (GetAttrRequest) returns (GetAttrReply) {}
     rpc ReadDir (ReadDirRequest) returns (ReadDirReply) {}
     rpc OpenDir (OpenDirRequest) returns (OpenDirReply) {}
+    rpc Open (OpenRequest) returns (OpenReply) {}
 }
 
 message MkdirRequest {
@@ -59,7 +60,7 @@ message OpenDirReply {
 
 message OpenRequest {
   string path = 1;
-  // int32 flags = 2;
+  int32 flags = 2;
   // int32 mode = 3;
 }
 

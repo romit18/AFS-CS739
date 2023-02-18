@@ -3,6 +3,8 @@
 #include <string>
 #include <grpc++/grpc++.h>
 #include <dirent.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <time.h>
 #include <limits.h>
 #include <libgen.h>
@@ -25,8 +27,6 @@ using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
 using unreliable_afs::OpenRequest;
 using unreliable_afs::OpenReply;
-using unreliable_afs::CreateRequest;
-using unreliable_afs::CreateReply;
 
 // Useful for create - mkdir if it doesn't exist
 // Source: https://stackoverflow.com/a/9210960
@@ -119,14 +119,14 @@ class UnreliableAFS {
     // If it doesn't exist, return error
         OpenRequest request;
         request.set_path(path);
-        // request.set_flags(flags);
+        request.set_flags(flags);
 
         struct stat rpcbuf;
 
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0) {
 	    // Do we delete the file if it is a stale copy, or do we keep it if it was newly created?
-            rc = open(path, fi->flags);
+            int rc = open(path.c_str(), flags);
             if (rc == -1) {
                 return -errno;
             }
@@ -136,22 +136,22 @@ class UnreliableAFS {
         OpenReply reply;
         ClientContext context;
         struct stat file_stats;
-        int local_res = lstat(path, &file_stats);
+        int local_res = lstat(path.c_str(), &file_stats);
 	// If modified time at server is after modified time at client,
 	// or if file is not present in cache, fetch it to cache
-	if (difftime(rpcbuf.st_mtime, local_res.st_mtime) > 0){
+	if (difftime(rpcbuf.st_mtime, file_stats.st_mtime) > 0){
 	    // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
-                memcpy(fetched_file, (char *)reply.file(), reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file().c_str(), reply.num_bytes());
 		// FIXME: This needs to be updated to be done safely
 		// remove previous copy and write updated file
 		// overwriting is risky because we need to account for cases
 		// such as the new copy being smaller than the previous one
-		unlink(path);
-		int new_file = open(path, fi->flags | O_CREAT, 0644);
+		unlink(path.c_str());
+		int new_file = open(path.c_str(), flags | O_CREAT, 0644);
 		write(new_file, fetched_file, reply.num_bytes());
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
@@ -167,10 +167,10 @@ class UnreliableAFS {
             if (status.ok()) {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
-                memcpy(fetched_file, (char *)reply.file(), reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file().c_str(), reply.num_bytes());
 		// Create directories in path (if not present) and write file
-                mkpath(path, 0755);
-		int new_file = open(path, fi->flags | O_CREAT, 0644);
+                mkpath(const_cast<char*>(path.c_str()), 0755);
+		int new_file = open(path.c_str(), flags | O_CREAT, 0644);
 		write(new_file, fetched_file, reply.num_bytes());
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
@@ -180,8 +180,8 @@ class UnreliableAFS {
             } else {
                 return -1;
             }
-	} else if(difftime(rpcbuf.st_mtime, local_res.st_mtime) <= 0) {
-		return open(path, fi->flags);
+	} else if(difftime(rpcbuf.st_mtime, file_stats.st_mtime) <= 0) {
+		return open(path.c_str(), flags);
 	}
 
     }
@@ -197,7 +197,7 @@ class UnreliableAFS {
     // since create is only called for new files
         OpenRequest request;
         request.set_path(path);
-        // request.set_flags(flags);
+        request.set_flags(flags);
         // request.set_mode(mode);
 
         struct stat rpcbuf;
@@ -205,8 +205,8 @@ class UnreliableAFS {
 	// Check if the directory in which this file
 	// supposedly resides exists on server.
 	// If it doesn't, return.
-	char file_dirname[PATH_MAX];
-	file_dirname = dirname(path);
+	char * file_dirname = (char *) malloc(PATH_MAX);
+	file_dirname = dirname(const_cast<char*>(path.c_str()));
 	int directory_exist = GetAttr(file_dirname, &rpcbuf);
 	if (directory_exist < 0) {
 		return -errno;
@@ -214,8 +214,8 @@ class UnreliableAFS {
 
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0){
-            mkpath(path, mode);
-            rc = open(path, fi->flags, mode);
+            mkpath(const_cast<char*>(path.c_str()), mode);
+            int rc = open(path.c_str(), flags, mode);
             if (rc == -1) {
                 return -errno;
             }
@@ -225,17 +225,17 @@ class UnreliableAFS {
         OpenReply reply;
         ClientContext context;
         struct stat file_stats;
-        int local_res = lstat(path, &file_stats);
+        int local_res = lstat(path.c_str(), &file_stats);
 	if ((local_res == -1) && (errno == ENOENT)) {
 	    // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
-                memcpy(fetched_file, (char *)reply.file(), reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file().c_str(), reply.num_bytes());
 		// Create directories in path (if not present) and write file
-                mkpath(path, 0755);
-		int new_file = open(path, fi->flags | O_CREAT, 0644);
+                mkpath(const_cast<char*>(path.c_str()), 0755);
+		int new_file = open(path.c_str(), flags | O_CREAT, mode);
 		write(new_file, fetched_file, reply.num_bytes());
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);

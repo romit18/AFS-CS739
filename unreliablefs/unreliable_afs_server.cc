@@ -33,6 +33,8 @@ using unreliable_afs::GetAttrReply;
 // using reliable_afs::ReadDirRequest;
 using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
+using unreliable_afs::OpenRequest;
+using unreliable_afs::OpenReply;
 using unreliable_afs::UnreliableAFSProto;
 
 std::string server_base_directory;
@@ -161,7 +163,8 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             std::cout<<"Opening File:"<<path<<std::endl;
             int res;
 
-            res = open(path.c_str(), request->flags(), request->mode());
+            res = open(path.c_str(), request->flags());
+            //res = open(path.c_str(), request->flags(), request->mode());
             if (res == -1) {
                 reply->set_err(-errno);
                 return Status::OK;
@@ -170,7 +173,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 	    struct stat file_info;
 	    fstat(res, &file_info);
 	    off_t file_size = file_info.st_size;
-	    (char *) buf = (char *) malloc(file_size);
+	    char * buf = (char *) malloc(file_size);
 	    pread(res, buf, file_size, 0);
 	    close(res);
 
@@ -182,6 +185,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
         }
 
 	// FIXME: Needs to be implemented
+	/*
         Status Close(ServerContext* context, const CloseRequest* request,
                 CloseReply* reply) override {
             reply->set_err(0);
@@ -197,6 +201,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 
             reply->set_err(res);
         }
+	*/
 
 };
 
