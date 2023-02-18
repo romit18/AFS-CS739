@@ -145,7 +145,7 @@ class UnreliableAFS {
 	// If modified time at server is after modified time at client,
 	// or if file is not present in cache, fetch it to cache
 	if (difftime(rpcbuf.st_mtime, file_stats.st_mtime) > 0){
-	    char * tmp_path = malloc(path.size() + 8);
+	    char * tmp_path = (char *) malloc(path.size() + 8);
 	    snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
 	    // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
@@ -284,6 +284,8 @@ class UnreliableAFS {
 	request.set_file(std::string(buf, file_size));
 	request.set_num_bytes(file_size);
 
+        CloseReply reply;
+        ClientContext context;
         Status status = stub_->Close(&context, request, &reply);
         return status.ok() ? reply.err() : -1;
     }

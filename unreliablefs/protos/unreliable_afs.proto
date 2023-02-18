@@ -11,6 +11,7 @@ service UnreliableAFSProto {
     rpc ReadDir (ReadDirRequest) returns (ReadDirReply) {}
     rpc OpenDir (OpenDirRequest) returns (OpenDirReply) {}
     rpc Open (OpenRequest) returns (OpenReply) {}
+    rpc Close (CloseRequest) returns (CloseReply) {}
 }
 
 message MkdirRequest {
