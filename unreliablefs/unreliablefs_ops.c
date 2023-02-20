@@ -108,7 +108,8 @@ int unreliable_getattr(const char *path, struct stat *buf)
         return -errno;
     }
     
-    return res;
+    // return res;
+    return 0;
 }
 
 int unreliable_readlink(const char *path, char *buf, size_t bufsiz)

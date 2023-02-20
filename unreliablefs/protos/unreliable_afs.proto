@@ -8,6 +8,7 @@ service UnreliableAFSProto {
     rpc Mkdir (MkdirRequest) returns (MkdirReply) {}
     rpc Rmdir (RmdirRequest) returns (RmdirReply) {}
     rpc GetAttr (GetAttrRequest) returns (GetAttrReply) {}
+    rpc GetXAttr (GetXAttrRequest) returns (GetXAttrReply) {}
     rpc ReadDir (ReadDirRequest) returns (ReadDirReply) {}
     rpc OpenDir (OpenDirRequest) returns (OpenDirReply) {}
     rpc Open (OpenRequest) returns (OpenReply) {}
@@ -39,6 +40,17 @@ message GetAttrRequest {
 message GetAttrReply {
     int32 err = 1;
     bytes buf = 2; 
+}
+
+message GetXAttrRequest {
+    string path = 1;
+    string name = 2;
+    uint64 size = 3;
+}
+
+message GetXAttrReply {
+    int64 size = 1;
+    optional bytes value = 2;
 }
 
 message ReadDirRequest{
