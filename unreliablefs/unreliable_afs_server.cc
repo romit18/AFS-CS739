@@ -265,6 +265,23 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             return Status::OK;
         }
 
+        Status Unlink(ServerContext* context, const UnlinkRequest* request,
+                UnlinkReply* reply) override {
+            reply->set_err(0);
+            std::string path = server_base_directory + request->path();
+            printf("Removing File: %s \n", path.c_str());
+            int res;
+
+            res = unlink(path.c_str());
+            if (res == -1) {
+                reply->set_err(-errno);
+                return Status::OK;
+            }
+
+            reply->set_err(res);
+            return Status::OK;
+        }
+
 };
 
 void RunServer(std::string base_path_str) {

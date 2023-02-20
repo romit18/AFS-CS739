@@ -317,6 +317,17 @@ class UnreliableAFS {
         return status.ok() ? reply.err() : -1;
     }
 
+    int Unlink(const std::string& path) {
+        UnlinkRequest request;
+        request.set_path(path);
+
+        UnlinkReply reply;
+        ClientContext context;
+        Status status = stub_->Unlink(&context, request, &reply);
+
+        return status.ok() ? reply.err() : -1;
+    }
+
     private:
     std::unique_ptr<UnreliableAFSProto::Stub> stub_;
     
@@ -356,6 +367,10 @@ int Create(UnreliableAFS* unreliableAFS, const char* path, int flags, int mode){
 
 int Close(UnreliableAFS* unreliableAFS, const char* path, int fd){
   return unreliableAFS->Close(path, fd);
+}
+
+int Unlink(UnreliableAFS* unreliableAFS, const char* path){
+  return unreliableAFS->Unlink(path);
 }
 
 // int main(int argc, char** argv) {

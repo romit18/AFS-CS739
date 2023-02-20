@@ -13,6 +13,7 @@ service UnreliableAFSProto {
     rpc OpenDir (OpenDirRequest) returns (OpenDirReply) {}
     rpc Open (OpenRequest) returns (OpenReply) {}
     rpc Close (CloseRequest) returns (CloseReply) {}
+    rpc Unlink (UnlinkRequest) returns (UnlinkReply) {}
 }
 
 message MkdirRequest {
@@ -91,4 +92,12 @@ message CloseRequest {
 
 message CloseReply {
   int32 err = 1;
+}
+
+message UnlinkRequest {
+    string path = 1;
+}
+
+message UnlinkReply {
+    int32 err = 1;
 }

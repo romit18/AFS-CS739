@@ -20,6 +20,7 @@ int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory);
 int Open(UnreliableAFS* unreliableAFS, const char* path, int flags);
 int Create(UnreliableAFS* unreliableAFS, const char* path, int flags, int mode);
 int Close(UnreliableAFS* unreliableAFS, const char* path, int fd);
+int Unlink(UnreliableAFS* unreliableAFS, const char* file_path);
 #ifdef __cplusplus
 }
 #endif
