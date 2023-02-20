@@ -237,6 +237,7 @@ class UnreliableAFS {
         OpenRequest request;
         request.set_path(path);
         request.set_flags(flags);
+        // std::cout<<"Creating File:"<<path<<std::endl;
         // request.set_mode(mode);
 
         struct stat rpcbuf;
@@ -245,18 +246,25 @@ class UnreliableAFS {
 	// supposedly resides exists on server.
 	// If it doesn't, return.
 	char * file_dirname = (char *) malloc(PATH_MAX);
-	file_dirname = dirname(const_cast<char*>(path.c_str()));
+	char* c_path = new char[path.length() + 1];
+	strcpy(c_path, path.c_str());
+	file_dirname = dirname(const_cast<char*>(c_path));
 	int directory_exist = GetAttr(file_dirname, &rpcbuf);
+        // std::cout<<"Checking if dir exists"<<file_dirname<<std::endl;
 	if (directory_exist < 0) {
 		return -errno;
 	}
 
+        // std::cout<<"After dir check"<<path<<std::endl;
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0){
+            // std::cout<<"GetAttr return val < 0"<<path<<std::endl;
             mkpath(const_cast<char*>(path.c_str()), 777);
             // mkpath(const_cast<char*>(path.c_str()), mode);
             int rc = open(path.c_str(), flags, mode);
             if (rc == -1) {
+                // std::cout<<"open threw an error"<<path<<std::endl;
+                // fprintf(stdout, "open threw an error - it is %s\n", strerror(errno));
                 return -errno;
             }
             return rc;
@@ -266,7 +274,9 @@ class UnreliableAFS {
         ClientContext context;
         struct stat file_stats;
         int local_res = lstat(path.c_str(), &file_stats);
+        // std::cout << "local file stat value is " << local_res << " at path " << path << std::endl;
 	if ((local_res == -1) && (errno == ENOENT)) {
+            // std::cout<<"File not found locally, but found on server"<<path<<std::endl;
 	    // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {

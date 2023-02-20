@@ -221,17 +221,21 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 
 	    // Check if directory we're writing to exists
 	    char * file_dirname = (char *) malloc(PATH_MAX);
-	    file_dirname = dirname(const_cast<char*>(path.c_str()));
+	    char* c_path = new char[path.length() + 1];
+	    strcpy(c_path, path.c_str());
+	    file_dirname = dirname(const_cast<char*>(c_path));
 	    struct stat dir_stats;
 	    res = lstat(file_dirname, &dir_stats);
 	    if (res == -1) {
 		reply->set_err(-errno);
                 return Status::OK;
 	    }
+	    // std::cout << "Directory exists" << std::endl;
 
 	    struct stat file_stats;
 	    res = lstat(path.c_str(), &file_stats);
 	    if ((res == -1) && (errno == ENOENT)){
+	        // std::cout << "new file" << std::endl;
 		int num_bytes = request->num_bytes();
 		char* fetched_file = (char *) malloc(num_bytes);
 		memcpy(fetched_file, (char *)request->file().data(), num_bytes);
@@ -243,6 +247,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 		res = close(new_file);
             } else if (res == 0) {
 		// Create a temporary file
+	        // std::cout << "existing file" << std::endl;
 		char * tmp_path = (char *) malloc(path.size() + 8);
 		snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
 		int num_bytes = request->num_bytes();

@@ -174,12 +174,12 @@ int unreliable_unlink(const char *path)
         return ret;
     }
 
-    // ret = Unlink(path);
-    ret = unlink(path); // Should be removed when we begin using RPC Unlink
+    ret = Unlink(unreliableAFS, path);
+    // ret = unlink(path); // Should be removed when we begin using RPC Unlink
     if (ret == -1) {
         return -errno;
     }
-    // ret = unlink(path);
+    ret = unlink(path);
 
     return 0;
 }
@@ -228,12 +228,12 @@ int unreliable_rename(const char *oldpath, const char *newpath)
         return ret;
     }
 
-    // ret = Rename(oldpath, newpath);
-    ret = rename(oldpath, newpath); // Should be removed when we begin using RPC Rename
+    ret = Rename(unreliableAFS, oldpath, newpath);
+    // ret = rename(oldpath, newpath); // Should be removed when we begin using RPC Rename
     if (ret == -1) {
         return -errno;
     }
-    // ret = rename(oldpath, newpath);
+    ret = rename(oldpath, newpath);
 
     return 0;
 }
@@ -315,7 +315,8 @@ int unreliable_open(const char *path, struct fuse_file_info *fi)
         return ret;
     }
 
-    ret = open(path, fi->flags);
+    ret = Open(unreliableAFS, path, fi->flags);
+    // ret = open(path, fi->flags);
     if (ret == -1) {
         return -errno;
     }
@@ -435,7 +436,8 @@ int unreliable_release(const char *path, struct fuse_file_info *fi)
         return ret;
     }
 
-    ret = close(fi->fh);
+    ret = Close(unreliableAFS, path, fi->fh);
+    // ret = close(fi->fh);
     if (ret == -1) {
         return -errno;
     }
@@ -698,7 +700,8 @@ int unreliable_create(const char *path, mode_t mode,
         return ret;
     }
 
-    ret = open(path, fi->flags, mode);
+    ret = Create(unreliableAFS, path, fi->flags, mode);
+    // ret = open(path, fi->flags, mode);
     if (ret == -1) {
         return -errno;
     }
