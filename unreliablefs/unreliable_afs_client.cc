@@ -98,24 +98,24 @@ class UnreliableAFS {
         }
     }
 
-    long int GetXAttr(const std::string& path, const std::string& name, void* value, size_t size){
-        GetXAttrRequest request;
-        request.set_path(path);
-        request.set_name(name);
-        request.set_size(size);
+    // long int GetXAttr(const std::string& path, const std::string& name, void* value, size_t size){
+    //     GetXAttrRequest request;
+    //     request.set_path(path);
+    //     request.set_name(name);
+    //     request.set_size(size);
 
-        GetXAttrReply reply;
-        ClientContext context;
-        Status status = stub_->GetXAttr(&context, request, &reply);
-        if (status.ok()) {
-            if (reply.size() > 0) {
-                memcpy(value, (struct stat *)(reply.value()).data(), reply.size());
-	    }
-            return reply.size();
-        } else {
-            return -1;
-        }
-    }
+    //     GetXAttrReply reply;
+    //     ClientContext context;
+    //     Status status = stub_->GetXAttr(&context, request, &reply);
+    //     if (status.ok()) {
+    //         if (reply.size() > 0) {
+    //             memcpy(value, (struct stat *)(reply.value()).data(), reply.size());
+	//     }
+    //         return reply.size();
+    //     } else {
+    //         return -1;
+    //     }
+    // }
 
     int Opendir(const std::string& path, DIR* directory){
         OpenDirRequest request;
@@ -143,8 +143,11 @@ class UnreliableAFS {
        // Status status = stub_->ReadDir(&context, request, &reply);
         int i=0;
         while (reader->Read(&reply)) {
-            buf[i]=(char *)malloc(sizeof(reply.buf()));
-            strcpy(buf[i], reply.buf().c_str());
+            const char* bufi=reply.buf().c_str();
+            buf[i]=(char *)malloc(sizeof(bufi));
+
+            // buf[i]=(char *)malloc(sizeof(reply.buf()));
+            strcpy(buf[i], bufi);
           //  buf[i]=reply.buf().c_str();
             i=i+1;
             if (reply.err() < 0) {
@@ -365,9 +368,9 @@ int Getattr(UnreliableAFS* unreliableAFS, const char* path, struct stat* stbuf){
   return unreliableAFS->GetAttr(path, stbuf);
 }
 
-long int Getxattr(UnreliableAFS* unreliableAFS, const char* path, const char* name, void* value, size_t size){
-  return unreliableAFS->GetXAttr(path, name, value, size);
-}
+// long int Getxattr(UnreliableAFS* unreliableAFS, const char* path, const char* name, void* value, size_t size){
+//   return unreliableAFS->GetXAttr(path, name, value, size);
+// }
 
 int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory){
   return unreliableAFS->Opendir(path, directory);

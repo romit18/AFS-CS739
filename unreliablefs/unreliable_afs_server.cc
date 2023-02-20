@@ -33,7 +33,7 @@ using unreliable_afs::GetAttrReply;
 using unreliable_afs::GetXAttrRequest;
 using unreliable_afs::GetXAttrReply;
 using unreliable_afs::ReadDirRequest;
-using unreliable_afs::ReadDirRequest;
+using unreliable_afs::ReadDirReply;
 using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
 using unreliable_afs::OpenRequest;
