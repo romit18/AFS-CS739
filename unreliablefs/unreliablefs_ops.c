@@ -97,16 +97,16 @@ int unreliable_getattr(const char *path, struct stat *buf)
     }
     // std::string cpp_path = path;
 
-    int res = Getattr(unreliableAFS, path, buf);
-    if (res < 0) {
-        return res;
-    }
-
     memset(buf, 0, sizeof(struct stat)); 
 
-    // if (lstat(path, buf) == -1) {
-    //     return -errno;
-    //}
+    // int res = Getattr(unreliableAFS, path, buf);
+    // if (res < 0) {
+    //     return res;
+    // }
+
+    if (lstat(path, buf) == -1) {
+        return -errno;
+    }
     
     return res;
 }
@@ -159,6 +159,7 @@ int unreliable_mkdir(const char *path, mode_t mode)
     if (ret == -1) {
         return -errno;
     }
+    mkdir(path, mode);
 
     return 0;
 }
@@ -193,6 +194,7 @@ int unreliable_rmdir(const char *path)
     if (ret == -1) {
         return -errno;
     }
+    rmdir(path);
 
     return 0;
 }

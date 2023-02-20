@@ -213,6 +213,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 		// int new_file = open(path.c_str(), O_RDWR | O_CREAT, 0664);
 		write(new_file, fetched_file, num_bytes);
 		lseek(new_file, SEEK_SET, 0);
+		fsync(new_file);
 		res = close(new_file);
             } else if (res == 0) {
 		// Create a temporary file
@@ -224,10 +225,11 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 		int new_file = open(tmp_path, O_RDWR | O_CREAT, 0777);
 		// int new_file = open(tmp_path, O_RDWR | O_CREAT, 0664);
 		write(new_file, fetched_file, num_bytes);
+		lseek(new_file, SEEK_SET, 0);
+		fsync(new_file);
+		res = close(new_file);
 		unlink(path.c_str());
 		rename(tmp_path, path.c_str());
-		lseek(new_file, SEEK_SET, 0);
-		res = close(new_file);
 	    } else {
 		reply->set_err(-errno);
                 return Status::OK;

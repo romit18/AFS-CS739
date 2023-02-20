@@ -159,11 +159,15 @@ class UnreliableAFS {
 		// int new_file = open(tmp_path, flags | O_CREAT, 0644);
 		int new_file = open(tmp_path, flags | O_CREAT, 0777);
 		write(new_file, fetched_file, reply.num_bytes());
-		unlink(path.c_str());
-		rename(tmp_path, path.c_str());
+		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
+		// Close the file and rename it
+		close(new_file);
+		unlink(path.c_str());
+		rename(tmp_path, path.c_str());
 		// Return fd
+		new_file = open(path.c_str(), flags);
 		return new_file;
                 // return reply.err();
             } else {
@@ -181,6 +185,7 @@ class UnreliableAFS {
 		int new_file = open(path.c_str(), flags | O_CREAT, 0777);
 		// int new_file = open(path.c_str(), flags | O_CREAT, 0644);
 		write(new_file, fetched_file, reply.num_bytes());
+		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
 		// Return fd
@@ -247,6 +252,7 @@ class UnreliableAFS {
                 mkpath(const_cast<char*>(path.c_str()), 0777);
 		int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, mode);
 		write(new_file, fetched_file, reply.num_bytes());
+		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
 		// Return fd
