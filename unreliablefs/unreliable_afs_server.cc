@@ -40,6 +40,10 @@ using unreliable_afs::OpenRequest;
 using unreliable_afs::OpenReply;
 using unreliable_afs::CloseRequest;
 using unreliable_afs::CloseReply;
+using unreliable_afs::UnlinkRequest;
+using unreliable_afs::UnlinkReply;
+using unreliable_afs::RenameRequest;
+using unreliable_afs::RenameReply;
 using unreliable_afs::UnreliableAFSProto;
 
 std::string server_base_directory;

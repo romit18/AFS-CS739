@@ -31,6 +31,10 @@ using unreliable_afs::OpenRequest;
 using unreliable_afs::OpenReply;
 using unreliable_afs::CloseRequest;
 using unreliable_afs::CloseReply;
+using unreliable_afs::UnlinkRequest;
+using unreliable_afs::UnlinkReply;
+using unreliable_afs::RenameRequest;
+using unreliable_afs::RenameReply;
 
 // Useful for create - mkdir if it doesn't exist
 // Source: https://stackoverflow.com/a/9210960
@@ -335,7 +339,7 @@ class UnreliableAFS {
 
         RenameReply reply;
         ClientContext context;
-        Status status = stub_->Unlink(&context, request, &reply);
+        Status status = stub_->Rename(&context, request, &reply);
 
         return status.ok() ? reply.err() : -1;
     }

@@ -14,6 +14,7 @@ service UnreliableAFSProto {
     rpc Open (OpenRequest) returns (OpenReply) {}
     rpc Close (CloseRequest) returns (CloseReply) {}
     rpc Unlink (UnlinkRequest) returns (UnlinkReply) {}
+    rpc Rename (RenameRequest) returns (RenameReply) {}
 }
 
 message MkdirRequest {
