@@ -9,7 +9,7 @@ service UnreliableAFSProto {
     rpc Rmdir (RmdirRequest) returns (RmdirReply) {}
     rpc GetAttr (GetAttrRequest) returns (GetAttrReply) {}
     rpc GetXAttr (GetXAttrRequest) returns (GetXAttrReply) {}
-    rpc ReadDir (ReadDirRequest) returns (ReadDirReply) {}
+    rpc ReadDir (ReadDirRequest) returns (stream ReadDirReply) {}
     rpc OpenDir (OpenDirRequest) returns (OpenDirReply) {}
     rpc Open (OpenRequest) returns (OpenReply) {}
     rpc Close (CloseRequest) returns (CloseReply) {}

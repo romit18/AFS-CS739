@@ -15,6 +15,7 @@ using grpc::ClientContext;
 using grpc::ClientReader;
 using grpc::ClientWriter;
 using grpc::Status;
+using grpc::ServerWriter;
 
 using unreliable_afs::UnreliableAFSProto;
 using unreliable_afs::MkdirRequest;
@@ -23,14 +24,16 @@ using unreliable_afs::RmdirRequest;
 using unreliable_afs::RmdirReply;
 using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
-using unreliable_afs::GetXAttrRequest;
-using unreliable_afs::GetXAttrReply;
+// using unreliable_afs::GetXAttrRequest;
+// using unreliable_afs::GetXAttrReply;
 using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
 using unreliable_afs::OpenRequest;
 using unreliable_afs::OpenReply;
 using unreliable_afs::CloseRequest;
 using unreliable_afs::CloseReply;
+using unreliable_afs::ReadDirRequest;
+using unreliable_afs::ReadDirReply;
 
 // Useful for create - mkdir if it doesn't exist
 // Source: https://stackoverflow.com/a/9210960
@@ -128,6 +131,30 @@ class UnreliableAFS {
         } else {
             return -1;
         }
+    }
+
+    int Readdir(const std::string& path, char** buf) {
+        ReadDirRequest request;
+        request.set_path(path);
+
+        ReadDirReply reply;
+        ClientContext context;
+        std::unique_ptr<ClientReader<ReadDirReply>> reader(stub_->ReadDir(&context, request));
+       // Status status = stub_->ReadDir(&context, request, &reply);
+        int i=0;
+        while (reader->Read(&reply)) {
+            buf[i]=(char *)malloc(sizeof(reply.buf()));
+            strcpy(buf[i], reply.buf().c_str());
+          //  buf[i]=reply.buf().c_str();
+            i=i+1;
+            if (reply.err() < 0) {
+                break;
+            }
+        }
+
+        Status status = reader->Finish();
+
+        return status.ok() ? reply.err() : -1;
     }
 
     int Open(const std::string& path, int flags){
@@ -344,6 +371,10 @@ long int Getxattr(UnreliableAFS* unreliableAFS, const char* path, const char* na
 
 int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory){
   return unreliableAFS->Opendir(path, directory);
+}
+
+int Readdir(UnreliableAFS* unreliableAFS, const char* path, char** buf){
+    return unreliableAFS->Readdir(path, buf);
 }
 
 int Open(UnreliableAFS* unreliableAFS, const char* path, int flags){
