@@ -133,7 +133,7 @@ class UnreliableAFS {
         }
     }
 
-    int Readdir(const std::string& path, char** buf) {
+    int Readdir(const std::string& path, std::vector<std::string>& buf) {
         ReadDirRequest request;
         request.set_path(path);
 
@@ -141,20 +141,21 @@ class UnreliableAFS {
         ClientContext context;
         std::unique_ptr<ClientReader<ReadDirReply>> reader(stub_->ReadDir(&context, request));
        // Status status = stub_->ReadDir(&context, request, &reply);
-        int i=0;
+        // int i=0;
         while (reader->Read(&reply)) {
-            const char* bufi=reply.buf().c_str();
-            buf[i]=(char *)malloc(sizeof(bufi));
+            buf.push_back(reply.buf());
+        //     const char* bufi=reply.buf().c_str();
+        //     buf[i]=(char *)malloc(sizeof(bufi));
 
-            // buf[i]=(char *)malloc(sizeof(reply.buf()));
-            strcpy(buf[i], bufi);
-          //  buf[i]=reply.buf().c_str();
-            i=i+1;
+        //     // buf[i]=(char *)malloc(sizeof(reply.buf()));
+        //     strcpy(buf[i], bufi);
+        //   //  buf[i]=reply.buf().c_str();
+        //     i=i+1;
             if (reply.err() < 0) {
                 break;
             }
         }
-
+        // std::cout << "Greeter received: " << buf.c_str() << std::endl; 
         Status status = reader->Finish();
 
         return status.ok() ? reply.err() : -1;
@@ -376,7 +377,7 @@ int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory){
   return unreliableAFS->Opendir(path, directory);
 }
 
-int Readdir(UnreliableAFS* unreliableAFS, const char* path, char** buf){
+int Readdir(UnreliableAFS* unreliableAFS, const char* path, std::vector<std::string>& buf){
     return unreliableAFS->Readdir(path, buf);
 }
 

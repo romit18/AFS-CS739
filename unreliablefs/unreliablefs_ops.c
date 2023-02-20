@@ -587,7 +587,7 @@ int unreliable_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     
     // ReadDir
     char** bufs;
-    bufs = (char **)malloc(sizeof(char*));
+    bufs = (char **)malloc(sizeof(char*)*65536);
 
     res = Readdir(unreliableAFS, path, bufs);
     if (res < 0) {
