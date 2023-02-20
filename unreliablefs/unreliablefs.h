@@ -21,6 +21,7 @@ int Open(UnreliableAFS* unreliableAFS, const char* path, int flags);
 int Create(UnreliableAFS* unreliableAFS, const char* path, int flags, int mode);
 int Close(UnreliableAFS* unreliableAFS, const char* path, int fd);
 int Unlink(UnreliableAFS* unreliableAFS, const char* file_path);
+int Rename(UnreliableAFS* unreliableAFS, const char* old_path, const char* new_path);
 #ifdef __cplusplus
 }
 #endif

@@ -282,6 +282,24 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             return Status::OK;
         }
 
+        Status Rename(ServerContext* context, const RenameRequest* request,
+                RenameReply* reply) override {
+            reply->set_err(0);
+            std::string oldpath = server_base_directory + request->oldpath();
+            std::string newpath = server_base_directory + request->newpath();
+            printf("Renaming File: %s to %s \n", oldpath.c_str(), newpath.c_str());
+            int res;
+
+            res = rename(oldpath.c_str(), newpath.c_str());
+            if (res == -1) {
+                reply->set_err(-errno);
+                return Status::OK;
+            }
+
+            reply->set_err(res);
+            return Status::OK;
+        }
+
 };
 
 void RunServer(std::string base_path_str) {

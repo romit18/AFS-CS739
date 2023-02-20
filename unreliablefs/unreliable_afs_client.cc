@@ -328,6 +328,18 @@ class UnreliableAFS {
         return status.ok() ? reply.err() : -1;
     }
 
+    int Rename(const std::string& oldpath, const std::string& newpath) {
+        RenameRequest request;
+        request.set_oldpath(oldpath);
+        request.set_newpath(newpath);
+
+        RenameReply reply;
+        ClientContext context;
+        Status status = stub_->Unlink(&context, request, &reply);
+
+        return status.ok() ? reply.err() : -1;
+    }
+
     private:
     std::unique_ptr<UnreliableAFSProto::Stub> stub_;
     
@@ -371,6 +383,10 @@ int Close(UnreliableAFS* unreliableAFS, const char* path, int fd){
 
 int Unlink(UnreliableAFS* unreliableAFS, const char* path){
   return unreliableAFS->Unlink(path);
+}
+
+int Rename(UnreliableAFS* unreliableAFS, const char* old_path, const char* new_path){
+  return unreliableAFS->Rename(old_path, new_path);
 }
 
 // int main(int argc, char** argv) {

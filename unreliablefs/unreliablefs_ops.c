@@ -175,7 +175,7 @@ int unreliable_unlink(const char *path)
     }
 
     // ret = Unlink(path);
-    ret = unlink(path); // Should be removed when we begin using Unlink
+    ret = unlink(path); // Should be removed when we begin using RPC Unlink
     if (ret == -1) {
         return -errno;
     }
@@ -228,10 +228,12 @@ int unreliable_rename(const char *oldpath, const char *newpath)
         return ret;
     }
 
-    ret = rename(oldpath, newpath);
+    // ret = Rename(oldpath, newpath);
+    ret = rename(oldpath, newpath); // Should be removed when we begin using RPC Rename
     if (ret == -1) {
         return -errno;
     }
+    // ret = rename(oldpath, newpath);
 
     return 0;
 }

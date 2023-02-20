@@ -101,3 +101,12 @@ message UnlinkRequest {
 message UnlinkReply {
     int32 err = 1;
 }
+
+message RenameRequest {
+    string oldpath = 1;
+    string newpath = 2;
+}
+
+message RenameReply {
+    int32 err = 1;
+}
