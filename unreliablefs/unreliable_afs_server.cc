@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <dirent.h>
+#include <sys/xattr.h>
 
 #include <grpc++/grpc++.h>
 
@@ -29,6 +30,8 @@ using unreliable_afs::RmdirRequest;
 using unreliable_afs::RmdirReply;
 using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
+using unreliable_afs::GetXAttrRequest;
+using unreliable_afs::GetXAttrReply;
 // using reliable_afs::ReadDirRequest;
 // using reliable_afs::ReadDirRequest;
 using unreliable_afs::OpenDirRequest;
@@ -104,6 +107,25 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             memcpy(&buf[0], &stbuf, buf.size());
             reply->set_buf(buf);    
             reply->set_err(res);
+            return Status::OK;
+        }
+
+        Status GetXAttr(ServerContext* context, const GetXAttrRequest* request,
+                GetXAttrReply* reply) override {
+            int res;
+            struct stat stbuf;
+            std::string path = server_base_directory + request->path();
+            printf("GetXAttr: %s \n", path.c_str());
+
+	    char * value = (char *) malloc(request->size());
+            ssize_t xattr_size = getxattr(path.c_str(), request->name().c_str(), value, request->size());
+            if (xattr_size == -1) {
+                reply->set_size(-errno);
+		// reply->set_value(std::string(value, request->size)); // Set as optional, so shouldn't have to be sent here
+                return Status::OK;
+            }
+            reply->set_value(std::string(value, xattr_size));
+	    reply->set_size(xattr_size);
             return Status::OK;
         }
 
@@ -208,11 +230,12 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 	    if ((res == -1) && (errno == ENOENT)){
 		int num_bytes = request->num_bytes();
 		char* fetched_file = (char *) malloc(num_bytes);
-		memcpy(fetched_file, (char *)request->file().c_str(), num_bytes);
+		memcpy(fetched_file, (char *)request->file().data(), num_bytes);
 		int new_file = open(path.c_str(), O_RDWR | O_CREAT, 0777);
 		// int new_file = open(path.c_str(), O_RDWR | O_CREAT, 0664);
 		write(new_file, fetched_file, num_bytes);
 		lseek(new_file, SEEK_SET, 0);
+		fsync(new_file);
 		res = close(new_file);
             } else if (res == 0) {
 		// Create a temporary file
@@ -220,14 +243,15 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 		snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
 		int num_bytes = request->num_bytes();
 		char* fetched_file = (char *) malloc(num_bytes);
-		memcpy(fetched_file, (char *)request->file().c_str(), num_bytes);
+		memcpy(fetched_file, (char *)request->file().data(), num_bytes);
 		int new_file = open(tmp_path, O_RDWR | O_CREAT, 0777);
 		// int new_file = open(tmp_path, O_RDWR | O_CREAT, 0664);
 		write(new_file, fetched_file, num_bytes);
+		lseek(new_file, SEEK_SET, 0);
+		fsync(new_file);
+		res = close(new_file);
 		unlink(path.c_str());
 		rename(tmp_path, path.c_str());
-		lseek(new_file, SEEK_SET, 0);
-		res = close(new_file);
 	    } else {
 		reply->set_err(-errno);
                 return Status::OK;

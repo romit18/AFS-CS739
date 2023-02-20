@@ -23,6 +23,8 @@ using unreliable_afs::RmdirRequest;
 using unreliable_afs::RmdirReply;
 using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
+using unreliable_afs::GetXAttrRequest;
+using unreliable_afs::GetXAttrReply;
 using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
 using unreliable_afs::OpenRequest;
@@ -93,6 +95,25 @@ class UnreliableAFS {
         }
     }
 
+    long int GetXAttr(const std::string& path, const std::string& name, void* value, size_t size){
+        GetXAttrRequest request;
+        request.set_path(path);
+        request.set_name(name);
+        request.set_size(size);
+
+        GetXAttrReply reply;
+        ClientContext context;
+        Status status = stub_->GetXAttr(&context, request, &reply);
+        if (status.ok()) {
+            if (reply.size() > 0) {
+                memcpy(value, (struct stat *)(reply.value()).data(), reply.size());
+	    }
+            return reply.size();
+        } else {
+            return -1;
+        }
+    }
+
     int Opendir(const std::string& path, DIR* directory){
         OpenDirRequest request;
         request.set_path(path);
@@ -152,18 +173,22 @@ class UnreliableAFS {
             if (status.ok()) {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
-                memcpy(fetched_file, (char *)reply.file().c_str(), reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
 		// remove previous copy and write updated file
 		// write new file to temporary copy, then unlink
 		// old copy and rename temporary copy to new file
 		// int new_file = open(tmp_path, flags | O_CREAT, 0644);
 		int new_file = open(tmp_path, flags | O_CREAT, 0777);
 		write(new_file, fetched_file, reply.num_bytes());
-		unlink(path.c_str());
-		rename(tmp_path, path.c_str());
+		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
+		// Close the file and rename it
+		close(new_file);
+		unlink(path.c_str());
+		rename(tmp_path, path.c_str());
 		// Return fd
+		new_file = open(path.c_str(), flags);
 		return new_file;
                 // return reply.err();
             } else {
@@ -175,12 +200,13 @@ class UnreliableAFS {
             if (status.ok()) {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
-                memcpy(fetched_file, (char *)reply.file().c_str(), reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
 		// Create directories in path (if not present) and write file
                 mkpath(const_cast<char*>(path.c_str()), 0777);
 		int new_file = open(path.c_str(), flags | O_CREAT, 0777);
 		// int new_file = open(path.c_str(), flags | O_CREAT, 0644);
 		write(new_file, fetched_file, reply.num_bytes());
+		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
 		// Return fd
@@ -242,11 +268,12 @@ class UnreliableAFS {
             if (status.ok()) {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
-                memcpy(fetched_file, (char *)reply.file().c_str(), reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
 		// Create directories in path (if not present) and write file
                 mkpath(const_cast<char*>(path.c_str()), 0777);
 		int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, mode);
 		write(new_file, fetched_file, reply.num_bytes());
+		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
 		// Return fd
@@ -309,6 +336,10 @@ int Rmdir(UnreliableAFS* unreliableAFS, const char* path){
 
 int Getattr(UnreliableAFS* unreliableAFS, const char* path, struct stat* stbuf){
   return unreliableAFS->GetAttr(path, stbuf);
+}
+
+long int Getxattr(UnreliableAFS* unreliableAFS, const char* path, const char* name, void* value, size_t size){
+  return unreliableAFS->GetXAttr(path, name, value, size);
 }
 
 int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory){
