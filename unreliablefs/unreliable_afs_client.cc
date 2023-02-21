@@ -167,9 +167,13 @@ class UnreliableAFS {
         ClientContext context;
         struct stat file_stats;
         int local_res = lstat(path.c_str(), &file_stats);
+	// Dump stats into temporary file
+	char * stats_file_path = (char *) malloc(path.size() + 16);
+	snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
+	int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
 	// If modified time at server is after modified time at client,
 	// or if file is not present in cache, fetch it to cache
-	if (difftime(rpcbuf.st_mtime, file_stats.st_mtime) > 0){
+	if ((rpcbuf.st_mtim.tv_sec > file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec > file_stats.st_mtim.tv_nsec))){
 	    char * tmp_path = (char *) malloc(path.size() + 8);
 	    snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
 	    // Fetch from server
@@ -191,6 +195,11 @@ class UnreliableAFS {
 		close(new_file);
 		unlink(path.c_str());
 		rename(tmp_path, path.c_str());
+		// Copy stats into temporary file
+                local_res = lstat(path.c_str(), &file_stats);
+		pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+		fsync(stats_file_fd);
+		close(stats_file_fd);
 		// Return fd
 		new_file = open(path.c_str(), flags);
 		return new_file;
@@ -213,13 +222,25 @@ class UnreliableAFS {
 		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
+		// Copy stats into temporary file
+                local_res = lstat(path.c_str(), &file_stats);
+		pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+		fsync(stats_file_fd);
+		close(stats_file_fd);
 		// Return fd
 		return new_file;
                 // return reply.err();
             } else {
+		close(stats_file_fd);
+		unlink(stats_file_path);
                 return -1;
             }
-	} else if(difftime(rpcbuf.st_mtime, file_stats.st_mtime) <= 0) {
+	} else if ((rpcbuf.st_mtim.tv_sec < file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec < file_stats.st_mtim.tv_nsec))){
+		// Copy stats into temporary file
+                local_res = lstat(path.c_str(), &file_stats);
+		pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+		fsync(stats_file_fd);
+		close(stats_file_fd);
 		return open(path.c_str(), flags);
 	}
 
@@ -241,6 +262,8 @@ class UnreliableAFS {
         // request.set_mode(mode);
 
         struct stat rpcbuf;
+        struct stat file_stats;
+	int local_res;
 
 	// Check if the directory in which this file
 	// supposedly resides exists on server.
@@ -255,6 +278,10 @@ class UnreliableAFS {
 		return -errno;
 	}
 
+	// Dump file stats into temporary file on open
+	char * stats_file_path = (char *) malloc(path.size() + 16);
+	snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
+
         // std::cout<<"After dir check"<<path<<std::endl;
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0){
@@ -267,13 +294,18 @@ class UnreliableAFS {
                 // fprintf(stdout, "open threw an error - it is %s\n", strerror(errno));
                 return -errno;
             }
+            // Copy stats into temporary file
+            int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
+            local_res = lstat(path.c_str(), &file_stats);
+	    pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+	    fsync(stats_file_fd);
+	    close(stats_file_fd);
             return rc;
         }
 
         OpenReply reply;
         ClientContext context;
-        struct stat file_stats;
-        int local_res = lstat(path.c_str(), &file_stats);
+        local_res = lstat(path.c_str(), &file_stats);
         // std::cout << "local file stat value is " << local_res << " at path " << path << std::endl;
 	if ((local_res == -1) && (errno == ENOENT)) {
             // std::cout<<"File not found locally, but found on server"<<path<<std::endl;
@@ -290,6 +322,12 @@ class UnreliableAFS {
 		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
+                // Copy stats into temporary file
+                int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
+                local_res = lstat(path.c_str(), &file_stats);
+	        pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+	        fsync(stats_file_fd);
+	        close(stats_file_fd);
 		// Return fd
 		return new_file;
                 // return reply.err();
@@ -303,7 +341,7 @@ class UnreliableAFS {
         CloseRequest request;
         request.set_path(path);
 	std::cout<<"Closing File:"<<path<<std::endl;
-	int rc;
+	int rc, close_rc;
 
 	rc = fsync(fd);
 	if (rc == -1) {
@@ -319,7 +357,35 @@ class UnreliableAFS {
 	off_t file_size = file_info.st_size;
 	char * buf = (char *) malloc(file_size);
 	pread(fd, buf, file_size, 0);
-	close(fd);
+	close_rc = close(fd);
+
+	if (close_rc == -1) {
+            return -errno;
+	}
+
+	rc = lstat(path.c_str(), &file_info);
+	if (rc == -1) {
+            return -errno;
+	}
+
+	// Check temporary file with stats from open
+	char * stats_file_path = (char *) malloc(path.size() + 16);
+	snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
+	int stats_file_fd = open(stats_file_path, O_RDONLY);
+	struct stat file_stats_at_open;
+	pread(stats_file_fd, &file_stats_at_open, sizeof(struct stat), 0);
+	close(stats_file_fd);
+
+        struct stat server_stats;
+        rc = GetAttr(path, &server_stats);
+
+	// If the file has not been modified, no need to flush changes to server as long as file exists on server
+	if (rc == 0) {
+		if((file_info.st_mtim.tv_sec == file_stats_at_open.st_mtim.tv_sec) && (file_info.st_mtim.tv_nsec == file_stats_at_open.st_mtim.tv_nsec)) {
+	                unlink(stats_file_path);
+			return close_rc;
+		}
+	}
 
         request.set_path(path);
 	request.set_file(std::string(buf, file_size));
@@ -329,10 +395,10 @@ class UnreliableAFS {
         ClientContext context;
         Status status = stub_->Close(&context, request, &reply);
 	if (status.ok()) {
-            struct stat server_stats, local_stats;
             struct timespec updated_time[2];
-            rc = lstat(path.c_str(), &local_stats);
-            updated_time[0] = local_stats.st_atim;
+            rc = lstat(path.c_str(), &file_info);
+            updated_time[0] = file_info.st_atim;
+            // struct stat server_stats;
             // rc = GetAttr(path, &server_stats);
             memcpy(&updated_time[1], (reply.m_tim()).data(), sizeof(struct timespec));
             utimensat(AT_FDCWD, path.c_str(), updated_time, 0);
@@ -341,6 +407,7 @@ class UnreliableAFS {
             // futimens(time_fd, updated_time);
             // close(time_fd);
 	}
+	unlink(stats_file_path);
         return status.ok() ? reply.err() : -1;
     }
 
