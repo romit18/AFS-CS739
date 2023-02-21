@@ -92,7 +92,7 @@ class UnreliableAFS {
         ClientContext context;
         Status status = stub_->GetAttr(&context, request, &reply);
         if (status.ok()) {
-            memcpy(stbuf, (struct stat *)(reply.buf()).data(), sizeof(struct stat*));
+            memcpy(stbuf, (reply.buf()).data(), sizeof(struct stat));
             return reply.err();
         } else {
             return -1;

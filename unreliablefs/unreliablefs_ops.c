@@ -99,14 +99,14 @@ int unreliable_getattr(const char *path, struct stat *buf)
 
     memset(buf, 0, sizeof(struct stat)); 
 
-    // int res = Getattr(unreliableAFS, path, buf);
-    // if (res < 0) {
-    //     return res;
-    // }
-
-    if (lstat(path, buf) == -1) {
-        return -errno;
+    int res = Getattr(unreliableAFS, path, buf);
+    if (res < 0) {
+        return res;
     }
+
+    // if (lstat(path, buf) == -1) {
+    //     return -errno;
+    // }
     
     // return res;
     return 0;
