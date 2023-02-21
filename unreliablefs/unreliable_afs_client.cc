@@ -333,8 +333,8 @@ class UnreliableAFS {
             struct timespec updated_time[2];
             rc = lstat(path.c_str(), &local_stats);
             updated_time[0] = local_stats.st_atim;
-            rc = GetAttr(path, &server_stats);
-            updated_time[1] = server_stats.st_mtim;
+            // rc = GetAttr(path, &server_stats);
+            memcpy(&updated_time[1], (reply.m_tim()).data(), sizeof(struct timespec));
             utimensat(AT_FDCWD, path.c_str(), updated_time, 0);
             // futimens may not be needed
             // int time_fd = open(path.c_str(), O_RDWR);

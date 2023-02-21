@@ -93,6 +93,7 @@ message CloseRequest {
 
 message CloseReply {
   int32 err = 1;
+  optional bytes m_tim = 2;
 }
 
 message UnlinkRequest {

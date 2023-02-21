@@ -116,7 +116,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 
         Status GetXAttr(ServerContext* context, const GetXAttrRequest* request,
                 GetXAttrReply* reply) override {
-            int res;
+            // int res;
             struct stat stbuf;
             std::string path = server_base_directory + request->path();
             printf("GetXAttr: %s \n", path.c_str());
@@ -217,56 +217,70 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             reply->set_err(0);
             std::string path = server_base_directory + request->path();
             std::cout<<"Server closing File:"<<path<<std::endl;
-            int res;
+            int rc;
+	    struct stat dir_stats, file_stats;
 
 	    // Check if directory we're writing to exists
 	    char * file_dirname = (char *) malloc(PATH_MAX);
-	    char* c_path = new char[path.length() + 1];
+	    char * c_path = new char[path.length() + 1];
 	    strcpy(c_path, path.c_str());
 	    file_dirname = dirname(const_cast<char*>(c_path));
-	    struct stat dir_stats;
-	    res = lstat(file_dirname, &dir_stats);
-	    if (res == -1) {
+	    rc = lstat(file_dirname, &dir_stats);
+	    if (rc == -1) {
 		reply->set_err(-errno);
                 return Status::OK;
 	    }
 	    // std::cout << "Directory exists" << std::endl;
 
-	    struct stat file_stats;
-	    res = lstat(path.c_str(), &file_stats);
-	    if ((res == -1) && (errno == ENOENT)){
+	    rc = lstat(path.c_str(), &file_stats);
+	    if ((rc == -1) && (errno == ENOENT)){
 	        // std::cout << "new file" << std::endl;
 		int num_bytes = request->num_bytes();
-		char* fetched_file = (char *) malloc(num_bytes);
+		char * fetched_file = (char *) malloc(num_bytes);
 		memcpy(fetched_file, (char *)request->file().data(), num_bytes);
 		int new_file = open(path.c_str(), O_RDWR | O_CREAT, 0777);
 		// int new_file = open(path.c_str(), O_RDWR | O_CREAT, 0664);
 		write(new_file, fetched_file, num_bytes);
 		lseek(new_file, SEEK_SET, 0);
 		fsync(new_file);
-		res = close(new_file);
-            } else if (res == 0) {
+		rc = close(new_file);
+		rc = lstat(path.c_str(), &file_stats);
+		// Extract modified time and send it
+		std::string time_buf;
+		time_buf.resize(sizeof(struct timespec));
+                assert(time_buf.size() == sizeof(struct timespec));
+		struct timespec modified_time = file_stats.st_mtim;
+		memcpy(&time_buf[0], &modified_time, time_buf.size());
+		reply->set_m_tim(time_buf);
+            } else if (rc == 0) {
 		// Create a temporary file
 	        // std::cout << "existing file" << std::endl;
 		char * tmp_path = (char *) malloc(path.size() + 8);
 		snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
 		int num_bytes = request->num_bytes();
-		char* fetched_file = (char *) malloc(num_bytes);
+		char * fetched_file = (char *) malloc(num_bytes);
 		memcpy(fetched_file, (char *)request->file().data(), num_bytes);
 		int new_file = open(tmp_path, O_RDWR | O_CREAT, 0777);
 		// int new_file = open(tmp_path, O_RDWR | O_CREAT, 0664);
 		write(new_file, fetched_file, num_bytes);
 		lseek(new_file, SEEK_SET, 0);
 		fsync(new_file);
-		res = close(new_file);
+		rc = close(new_file);
 		unlink(path.c_str());
 		rename(tmp_path, path.c_str());
+		// Extract modified time and send it
+		std::string time_buf;
+		time_buf.resize(sizeof(struct timespec));
+                assert(time_buf.size() == sizeof(struct timespec));
+		struct timespec modified_time = file_stats.st_mtim;
+		memcpy(&time_buf[0], &modified_time, time_buf.size());
+		reply->set_m_tim(time_buf);
 	    } else {
 		reply->set_err(-errno);
-                return Status::OK;
+                return Status::CANCELLED;
 	    }
 
-	    if (res == -1) {
+	    if (rc == -1) {
                 reply->set_err(-errno);
 	    } else {
                 reply->set_err(0);
