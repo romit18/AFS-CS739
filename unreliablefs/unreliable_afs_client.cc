@@ -303,16 +303,16 @@ class UnreliableAFS {
         CloseRequest request;
         request.set_path(path);
 	std::cout<<"Closing File:"<<path<<std::endl;
-	int res;
+	int rc;
 
-	res = fsync(fd);
-	if (res == -1) {
+	rc = fsync(fd);
+	if (rc == -1) {
             return -errno;
 	}
 
 	struct stat file_info;
-	res = fstat(fd, &file_info);
-	if (res == -1) {
+	rc = fstat(fd, &file_info);
+	if (rc == -1) {
             return -errno;
 	}
 
@@ -328,6 +328,19 @@ class UnreliableAFS {
         CloseReply reply;
         ClientContext context;
         Status status = stub_->Close(&context, request, &reply);
+	if (status.ok()) {
+            struct stat server_stats, local_stats;
+            struct timespec updated_time[2];
+            rc = lstat(path.c_str(), &local_stats);
+            updated_time[0] = local_stats.st_atim;
+            rc = GetAttr(path, &server_stats);
+            updated_time[1] = server_stats.st_mtim;
+            utimensat(AT_FDCWD, path.c_str(), updated_time, 0);
+            // futimens may not be needed
+            // int time_fd = open(path.c_str(), O_RDWR);
+            // futimens(time_fd, updated_time);
+            // close(time_fd);
+	}
         return status.ok() ? reply.err() : -1;
     }
 
