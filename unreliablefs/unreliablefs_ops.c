@@ -9,7 +9,6 @@
 #ifdef HAVE_XATTR
 #include <sys/xattr.h>
 #endif /* HAVE_XATTR */
-
 #ifdef linux
 /* For pread()/pwrite()/utimensat() */
 #define _XOPEN_SOURCE 700
@@ -553,7 +552,7 @@ int unreliable_removexattr(const char *path, const char *name)
         return -errno;
     }
     
-    return 0;    
+    return 0;   
 }
 #endif /* HAVE_XATTR */
 
@@ -567,6 +566,8 @@ int unreliable_opendir(const char *path, struct fuse_file_info *fi)
     }
 
     DIR *dir = opendir(path);
+
+  //  int res = Opendir(unreliableAFS, path, dir);
 
     if (!dir) {
         return -errno;
@@ -585,33 +586,58 @@ int unreliable_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     } else if (ret) {
         return ret;
     }
-
-    DIR* dir = opendir(path);
-
-    if(dir == NULL){
-        return -1;
-    }
-
-    // DIR* directory = NULL;
-    // int open = Opendir(unreliableAFS, path, directory);
-    // if (directory == NULL) {
-	//     return -1;
-    // }
-    struct dirent *de;
-
     (void) offset;
     (void) fi;
+    //
+    int res;
     
-    while ((de = readdir(dir)) != NULL) {
+    // ReadDir
+    char** bufs;
+    bufs = (char **)malloc(sizeof(char*)*65536);
+
+    res = Readdir(unreliableAFS, path, bufs);
+    if (res < 0) {
+        return res;
+    }
+    for (char* c = *bufs; c; c=*++bufs) {
+        struct dirent de;
+        memcpy(&de, &c[0], sizeof(de));
         struct stat st;
         memset(&st, 0, sizeof(st));
-        st.st_ino = de->d_ino;
-        st.st_mode = de->d_type << 12;
-        if (filler(buf, de->d_name, &st, 0))
+        st.st_ino = de.d_ino;
+        st.st_mode = de.d_type << 12;
+        if (filler(buf, de.d_name, &st, 0)) {
             break;
+        }
     }
-    closedir(dir);
+    
     return 0;
+    // DIR* dir = opendir(path);
+
+    // if(dir == NULL){
+    //     return -1;
+    // }
+
+    // // DIR* directory = NULL;
+    // // int open = Opendir(unreliableAFS, path, directory);
+    // // if (directory == NULL) {
+	// //     return -1;
+    // // }
+    // struct dirent *de;
+
+    // (void) offset;
+    // (void) fi;
+    
+  //  while ((de = readdir(dir)) != NULL) {
+    //     struct stat st;
+    //     memset(&st, 0, sizeof(st));
+    //     st.st_ino = de->d_ino;
+    //     st.st_mode = de->d_type << 12;
+    //     if (filler(buf, de->d_name, &st, 0))
+    //         break;
+    // }
+    // closedir(dir);
+    // return 0;
 }
 
 int unreliable_releasedir(const char *path, struct fuse_file_info *fi)

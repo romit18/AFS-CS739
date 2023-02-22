@@ -11,6 +11,7 @@
 #include <libgen.h>
 #include <dirent.h>
 #include <sys/xattr.h>
+#include <sys/xattr.h>
 
 #include <grpc++/grpc++.h>
 
@@ -32,8 +33,8 @@ using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
 using unreliable_afs::GetXAttrRequest;
 using unreliable_afs::GetXAttrReply;
-// using reliable_afs::ReadDirRequest;
-// using reliable_afs::ReadDirRequest;
+using unreliable_afs::ReadDirRequest;
+using unreliable_afs::ReadDirReply;
 using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
 using unreliable_afs::OpenRequest;
@@ -144,45 +145,44 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             DIR *dp;
 
             dp = opendir(path.c_str());
-            std::string buf;
-            buf.resize(sizeof(DIR*));
-            memcpy(&buf[0], dp, buf.size());
+          
             if (dp == NULL) {
                 reply->set_err(-errno);
-                return Status::CANCELLED;
+                return Status::OK;
             }
+            std::string buf;
+            buf.resize(sizeof(dp));
+            memcpy(&buf[0], dp, buf.size());
             reply->set_dir(buf);
             return Status::OK;
         }
 
-        // Status ReadDir(ServerContext* context, const ReadDirRequest* request,
-        //         ServerWriter<ReadDirReply>* writer) override {
-        //     ReadDirReply* reply = new ReadDirReply();
-        //     // default errno = 0
-        //     reply->set_err(0);
+        Status ReadDir(ServerContext* context, const ReadDirRequest* request, ServerWriter<ReadDirReply>* writer) override {
+            ReadDirReply* reply = new ReadDirReply();
+            // default errno = 0
+            reply->set_err(0);
 
-        //     std::string path = server_base_directory + request->path();
-        //     printf("ReadDir: %s \n", path.c_str());
+            std::string path = server_base_directory + request->path();
+            printf("ReadDir: %s \n", path.c_str());
 
-        //     DIR *dp;
-        //     struct dirent *de;
+            DIR *dp;
+            struct dirent *de;
 
-        //     dp = opendir(path.c_str());
-        //     if (dp == NULL) {
-        //         reply->set_err(-errno);
-        //         return Status::OK;
-        //     }
-
-        //     while ((de = readdir(dp)) != NULL) {
-        //         std::string buf;
-        //         buf.resize(sizeof(struct dirent));
-        //         memcpy(&buf[0], de, buf.size());
-        //         reply->set_buf(buf);
-        //         writer->Write(*reply);
-        //     }
-        //     closedir(dp);
-        //     return Status::OK;
-        // }
+            dp = opendir(path.c_str());
+            if (dp == NULL) {
+                reply->set_err(-errno);
+                return Status::OK;
+            }
+            while ((de = readdir(dp)) != NULL) {
+                std::string buf;
+                buf.resize(sizeof(struct dirent));
+                memcpy(&buf[0], de, buf.size());
+                reply->set_buf(buf);
+                writer->Write(*reply);
+            }
+            closedir(dp);
+            return Status::OK;
+        }
 
         Status Open(ServerContext* context, const OpenRequest* request,
                 OpenReply* reply) override {

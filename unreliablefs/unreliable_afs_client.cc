@@ -15,6 +15,7 @@ using grpc::ClientContext;
 using grpc::ClientReader;
 using grpc::ClientWriter;
 using grpc::Status;
+using grpc::ServerWriter;
 
 using unreliable_afs::UnreliableAFSProto;
 using unreliable_afs::MkdirRequest;
@@ -23,6 +24,8 @@ using unreliable_afs::RmdirRequest;
 using unreliable_afs::RmdirReply;
 using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
+// using unreliable_afs::GetXAttrRequest;
+// using unreliable_afs::GetXAttrReply;
 using unreliable_afs::GetXAttrRequest;
 using unreliable_afs::GetXAttrReply;
 using unreliable_afs::OpenDirRequest;
@@ -35,6 +38,8 @@ using unreliable_afs::UnlinkRequest;
 using unreliable_afs::UnlinkReply;
 using unreliable_afs::RenameRequest;
 using unreliable_afs::RenameReply;
+using unreliable_afs::ReadDirRequest;
+using unreliable_afs::ReadDirReply;
 
 // Useful for create - mkdir if it doesn't exist
 // Source: https://stackoverflow.com/a/9210960
@@ -134,6 +139,34 @@ class UnreliableAFS {
         }
     }
 
+    int Readdir(const std::string& path, std::vector<std::string>& buf) {
+        ReadDirRequest request;
+        request.set_path(path);
+
+        ReadDirReply reply;
+        ClientContext context;
+        std::unique_ptr<ClientReader<ReadDirReply>> reader(stub_->ReadDir(&context, request));
+       // Status status = stub_->ReadDir(&context, request, &reply);
+        // int i=0;
+        while (reader->Read(&reply)) {
+            buf.push_back(reply.buf());
+        //     const char* bufi=reply.buf().c_str();
+        //     buf[i]=(char *)malloc(sizeof(bufi));
+
+        //     // buf[i]=(char *)malloc(sizeof(reply.buf()));
+        //     strcpy(buf[i], bufi);
+        //   //  buf[i]=reply.buf().c_str();
+        //     i=i+1;
+            if (reply.err() < 0) {
+                break;
+            }
+        }
+        // std::cout << "Greeter received: " << buf.c_str() << std::endl; 
+        Status status = reader->Finish();
+
+        return status.ok() ? reply.err() : -1;
+    }
+
     int Open(const std::string& path, int flags){
     // Open logic:
     // Issue getattr. If the file doesn't exist on server,
@@ -182,12 +215,14 @@ class UnreliableAFS {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
 		// remove previous copy and write updated file
 		// write new file to temporary copy, then unlink
 		// old copy and rename temporary copy to new file
 		// int new_file = open(tmp_path, flags | O_CREAT, 0644);
 		int new_file = open(tmp_path, flags | O_CREAT, 0777);
 		write(new_file, fetched_file, reply.num_bytes());
+		fsync(new_file);
 		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
@@ -202,6 +237,7 @@ class UnreliableAFS {
 		close(stats_file_fd);
 		// Return fd
 		new_file = open(path.c_str(), flags);
+		new_file = open(path.c_str(), flags);
 		return new_file;
                 // return reply.err();
             } else {
@@ -214,11 +250,13 @@ class UnreliableAFS {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
 		// Create directories in path (if not present) and write file
                 mkpath(const_cast<char*>(path.c_str()), 0777);
 		int new_file = open(path.c_str(), flags | O_CREAT, 0777);
 		// int new_file = open(path.c_str(), flags | O_CREAT, 0644);
 		write(new_file, fetched_file, reply.num_bytes());
+		fsync(new_file);
 		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
@@ -315,10 +353,12 @@ class UnreliableAFS {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
+                memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
 		// Create directories in path (if not present) and write file
                 mkpath(const_cast<char*>(path.c_str()), 0777);
 		int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, mode);
 		write(new_file, fetched_file, reply.num_bytes());
+		fsync(new_file);
 		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
@@ -458,12 +498,20 @@ int Getattr(UnreliableAFS* unreliableAFS, const char* path, struct stat* stbuf){
   return unreliableAFS->GetAttr(path, stbuf);
 }
 
+// long int Getxattr(UnreliableAFS* unreliableAFS, const char* path, const char* name, void* value, size_t size){
+//   return unreliableAFS->GetXAttr(path, name, value, size);
+// }
+
 long int Getxattr(UnreliableAFS* unreliableAFS, const char* path, const char* name, void* value, size_t size){
   return unreliableAFS->GetXAttr(path, name, value, size);
 }
 
 int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory){
   return unreliableAFS->Opendir(path, directory);
+}
+
+int Readdir(UnreliableAFS* unreliableAFS, const char* path, std::vector<std::string>& buf){
+    return unreliableAFS->Readdir(path, buf);
 }
 
 int Open(UnreliableAFS* unreliableAFS, const char* path, int flags){
