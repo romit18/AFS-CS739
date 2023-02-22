@@ -4,6 +4,7 @@
 #include <limits.h> /* PATH_MAX */
 #include <pthread.h>
 #include <dirent.h>
+#include <fuse.h>
 
 #define DEFAULT_CONF_NAME "unreliablefs.conf"
 #ifdef __cplusplus
@@ -17,13 +18,14 @@ int Mkdir(UnreliableAFS* unreliableAFS, const char* file_path, int mode);
 int Rmdir(UnreliableAFS* unreliableAFS, const char* file_path);
 int Getattr(UnreliableAFS* unreliableAFS, const char* path, struct stat* buf);
 int Getxattr(UnreliableAFS* unreliableAFS, const char* path, const char* name, void* value, size_t size);
-int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory);
-int Readdir(UnreliableAFS* unreliableAFS, const char* path, char** buf);
+DIR* Opendir(UnreliableAFS* unreliableAFS, const char* path);
+int Readdir(UnreliableAFS* unreliableAFS, const char* path, void* buf, fuse_fill_dir_t filler);
 int Open(UnreliableAFS* unreliableAFS, const char* path, int flags);
 int Create(UnreliableAFS* unreliableAFS, const char* path, int flags, int mode);
 int Close(UnreliableAFS* unreliableAFS, const char* path, int fd);
 int Unlink(UnreliableAFS* unreliableAFS, const char* file_path);
 int Rename(UnreliableAFS* unreliableAFS, const char* old_path, const char* new_path);
+int Access(UnreliableAFS* unreliableAFS, const char* path, int mode);
 #ifdef __cplusplus
 }
 #endif

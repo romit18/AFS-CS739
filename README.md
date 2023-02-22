@@ -72,8 +72,8 @@ See documentation in [unreliablefs.1](https://ligurio.github.io/unreliablefs/unr
 
 # Gettings afs to work
 ```
-$ cd unreliable
-$ protoc -I ../protos --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ../protos/unreliable_afs.proto
-$ protoc -I ../protos --cpp_out=. ../protos/unreliable_afs.proto
-$ make
+mkdir /tmp/fs
+mkdir -p /tmp/uafs/tmp/mp
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build --parallel
+./build/unreliablefs/unreliable_afs_client -d /tmp/fs -basedir=/tmp/mp -seed=1618680646
 ```

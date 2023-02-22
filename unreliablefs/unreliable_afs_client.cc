@@ -8,6 +8,7 @@
 #include <time.h>
 #include <limits.h>
 #include <libgen.h>
+#include <fuse.h>
 #include "unreliable_afs.grpc.pb.h"
 
 using grpc::Channel;
@@ -24,8 +25,6 @@ using unreliable_afs::RmdirRequest;
 using unreliable_afs::RmdirReply;
 using unreliable_afs::GetAttrRequest;
 using unreliable_afs::GetAttrReply;
-// using unreliable_afs::GetXAttrRequest;
-// using unreliable_afs::GetXAttrReply;
 using unreliable_afs::GetXAttrRequest;
 using unreliable_afs::GetXAttrReply;
 using unreliable_afs::OpenDirRequest;
@@ -40,6 +39,8 @@ using unreliable_afs::RenameRequest;
 using unreliable_afs::RenameReply;
 using unreliable_afs::ReadDirRequest;
 using unreliable_afs::ReadDirReply;
+using unreliable_afs::AccessRequest;
+using unreliable_afs::AccessReply;
 
 // Useful for create - mkdir if it doesn't exist
 // Source: https://stackoverflow.com/a/9210960
@@ -123,7 +124,7 @@ class UnreliableAFS {
         }
     }
 
-    int Opendir(const std::string& path, DIR* directory){
+    DIR* Opendir(const std::string& path){
         OpenDirRequest request;
         request.set_path(path);
 
@@ -131,15 +132,16 @@ class UnreliableAFS {
         ClientContext context;
         Status status = stub_->OpenDir(&context, request, &reply);
         if (status.ok()) {
-            memcpy(directory, (DIR*)reply.dir().data(), sizeof(DIR*));
-            directory = (DIR *)reply.dir().data();
-            return reply.err();
+            DIR* directory = (DIR*) malloc(reply.dir().size());
+            memcpy(directory, (DIR*)reply.dir().data(), reply.dir().size());
+            // directory = (DIR *)reply.dir().data();
+            return directory;
         } else {
-            return -1;
+            return 0;
         }
     }
 
-    int Readdir(const std::string& path, std::vector<std::string>& buf) {
+    int Readdir(const std::string& path, void* buf, fuse_fill_dir_t filler) {
         ReadDirRequest request;
         request.set_path(path);
 
@@ -149,7 +151,10 @@ class UnreliableAFS {
        // Status status = stub_->ReadDir(&context, request, &reply);
         // int i=0;
         while (reader->Read(&reply)) {
-            buf.push_back(reply.buf());
+            if(reply.err()==0) {
+                filler(buf, (reply.name()).c_str(), NULL, 0);
+            }
+            // buf.push_back(reply.buf());
         //     const char* bufi=reply.buf().c_str();
         //     buf[i]=(char *)malloc(sizeof(bufi));
 
@@ -157,12 +162,24 @@ class UnreliableAFS {
         //     strcpy(buf[i], bufi);
         //   //  buf[i]=reply.buf().c_str();
         //     i=i+1;
-            if (reply.err() < 0) {
-                break;
-            }
+            // if (reply.err() < 0) {
+            //     break;
+            // }
         }
         // std::cout << "Greeter received: " << buf.c_str() << std::endl; 
         Status status = reader->Finish();
+
+        return status.ok() ? reply.err() : -1;
+    }
+
+    int Access(const std::string& path, int mode) {
+        AccessRequest request;
+        request.set_path(path);
+        request.set_mode(mode);
+
+        AccessReply reply;
+        ClientContext context;
+        Status status = stub_->Access(&context, request, &reply);
 
         return status.ok() ? reply.err() : -1;
     }
@@ -353,12 +370,10 @@ class UnreliableAFS {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
-                memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
 		// Create directories in path (if not present) and write file
                 mkpath(const_cast<char*>(path.c_str()), 0777);
 		int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, mode);
 		write(new_file, fetched_file, reply.num_bytes());
-		fsync(new_file);
 		fsync(new_file);
 		// Reset file offset of open fd
 		lseek(new_file, SEEK_SET, 0);
@@ -506,12 +521,16 @@ long int Getxattr(UnreliableAFS* unreliableAFS, const char* path, const char* na
   return unreliableAFS->GetXAttr(path, name, value, size);
 }
 
-int Opendir(UnreliableAFS* unreliableAFS, const char* path, DIR* directory){
-  return unreliableAFS->Opendir(path, directory);
+int Access(UnreliableAFS* unreliableAFS, const char* path, int mode) {
+    return unreliableAFS->Access(path, mode);
 }
 
-int Readdir(UnreliableAFS* unreliableAFS, const char* path, std::vector<std::string>& buf){
-    return unreliableAFS->Readdir(path, buf);
+DIR* Opendir(UnreliableAFS* unreliableAFS, const char* path){
+  return unreliableAFS->Opendir(path);
+}
+
+int Readdir(UnreliableAFS* unreliableAFS, const char* path, void* buf, fuse_fill_dir_t filler){
+    return unreliableAFS->Readdir(path, buf, filler);
 }
 
 int Open(UnreliableAFS* unreliableAFS, const char* path, int flags){

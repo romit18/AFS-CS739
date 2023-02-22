@@ -15,6 +15,7 @@ service UnreliableAFSProto {
     rpc Close (CloseRequest) returns (CloseReply) {}
     rpc Unlink (UnlinkRequest) returns (UnlinkReply) {}
     rpc Rename (RenameRequest) returns (RenameReply) {}
+    rpc Access (AccessRequest) returns (AccessReply) {}
 }
 
 message MkdirRequest {
@@ -61,7 +62,7 @@ message ReadDirRequest{
 
 message ReadDirReply {
     int32 err = 1;
-    bytes buf = 2;
+    string name = 2;
 }
 
 message OpenDirRequest{
@@ -111,4 +112,13 @@ message RenameRequest {
 
 message RenameReply {
     int32 err = 1;
+}
+
+message AccessRequest{
+    string path = 1;
+    int32  mode = 2;
+}
+
+message AccessReply{
+    int32  err = 1;
 }

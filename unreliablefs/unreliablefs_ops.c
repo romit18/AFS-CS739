@@ -71,6 +71,7 @@ extern int error_inject(const char* path, fuse_op operation);
 
 int unreliable_lstat(const char *path, struct stat *buf)
 {
+    printf("--------fuse log -------- calling lstat on fuse\n");
     int ret = error_inject(path, OP_LSTAT);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -88,6 +89,8 @@ int unreliable_lstat(const char *path, struct stat *buf)
 
 int unreliable_getattr(const char *path, struct stat *buf)
 {
+    printf("--------fuse log -------- calling getattr on fuse, path:%s\n", path);
+
     int ret = error_inject(path, OP_GETATTR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -113,6 +116,8 @@ int unreliable_getattr(const char *path, struct stat *buf)
 
 int unreliable_readlink(const char *path, char *buf, size_t bufsiz)
 {
+    printf("--------fuse log -------- calling readlink on fuse\n");
+
     int ret = error_inject(path, OP_READLINK);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -131,6 +136,7 @@ int unreliable_readlink(const char *path, char *buf, size_t bufsiz)
 
 int unreliable_mknod(const char *path, mode_t mode, dev_t dev)
 {
+    printf("--------fuse log -------- calling mknod on fuse\n");
     int ret = error_inject(path, OP_MKNOD);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -148,6 +154,7 @@ int unreliable_mknod(const char *path, mode_t mode, dev_t dev)
 
 int unreliable_mkdir(const char *path, mode_t mode)
 {
+    printf("--------fuse log -------- calling mkdir on fuse\n");
     int ret = error_inject(path, OP_MKDIR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -166,6 +173,7 @@ int unreliable_mkdir(const char *path, mode_t mode)
 
 int unreliable_unlink(const char *path)
 {
+    printf("--------fuse log -------- calling ulink on fuse\n");
     int ret = error_inject(path, OP_UNLINK);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -185,6 +193,7 @@ int unreliable_unlink(const char *path)
 
 int unreliable_rmdir(const char *path)
 {
+    printf("--------fuse log -------- calling rmdir on fuse\n");
     int ret = error_inject(path, OP_RMDIR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -203,6 +212,7 @@ int unreliable_rmdir(const char *path)
 
 int unreliable_symlink(const char *target, const char *linkpath)
 {
+    printf("--------fuse log -------- calling symlink on fuse\n");
     int ret = error_inject(target, OP_SYMLINK);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -220,6 +230,7 @@ int unreliable_symlink(const char *target, const char *linkpath)
 
 int unreliable_rename(const char *oldpath, const char *newpath)
 {
+    printf("--------fuse log -------- calling rename on fuse\n");
     int ret = error_inject(oldpath, OP_RENAME);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -239,6 +250,7 @@ int unreliable_rename(const char *oldpath, const char *newpath)
 
 int unreliable_link(const char *oldpath, const char *newpath)
 {
+    printf("--------fuse log -------- calling link on fuse\n");
     int ret = error_inject(oldpath, OP_LINK);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -256,6 +268,7 @@ int unreliable_link(const char *oldpath, const char *newpath)
 
 int unreliable_chmod(const char *path, mode_t mode)
 {
+    printf("--------fuse log -------- calling chmod on fuse\n");
     int ret = error_inject(path, OP_CHMOD);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -273,6 +286,7 @@ int unreliable_chmod(const char *path, mode_t mode)
 
 int unreliable_chown(const char *path, uid_t owner, gid_t group)
 {
+    printf("--------fuse log -------- calling chown on fuse\n");
     int ret = error_inject(path, OP_CHOWN);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -290,6 +304,7 @@ int unreliable_chown(const char *path, uid_t owner, gid_t group)
 
 int unreliable_truncate(const char *path, off_t length)
 {
+    printf("--------fuse log -------- calling truncate on fuse\n");
     int ret = error_inject(path, OP_TRUNCATE);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -307,6 +322,7 @@ int unreliable_truncate(const char *path, off_t length)
 
 int unreliable_open(const char *path, struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling open on fuse\n");
     int ret = error_inject(path, OP_OPEN);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -327,6 +343,7 @@ int unreliable_open(const char *path, struct fuse_file_info *fi)
 int unreliable_read(const char *path, char *buf, size_t size, off_t offset,
                     struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling read on fuse\n");
     int ret = error_inject(path, OP_READ);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -361,6 +378,7 @@ int unreliable_read(const char *path, char *buf, size_t size, off_t offset,
 int unreliable_write(const char *path, const char *buf, size_t size,
                      off_t offset, struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling write on fuse\n");
     int ret = error_inject(path, OP_WRITE);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -394,6 +412,7 @@ int unreliable_write(const char *path, const char *buf, size_t size,
 
 int unreliable_statfs(const char *path, struct statvfs *buf)
 {
+    printf("--------fuse log -------- calling statfs on fuse\n");
     int ret = error_inject(path, OP_STATFS);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -411,6 +430,7 @@ int unreliable_statfs(const char *path, struct statvfs *buf)
 
 int unreliable_flush(const char *path, struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling flush on fuse\n");
     int ret = error_inject(path, OP_FLUSH);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -428,6 +448,7 @@ int unreliable_flush(const char *path, struct fuse_file_info *fi)
 
 int unreliable_release(const char *path, struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling release on fuse\n");
     int ret = error_inject(path, OP_RELEASE);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -446,6 +467,7 @@ int unreliable_release(const char *path, struct fuse_file_info *fi)
 
 int unreliable_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling fsync on fuse\n");
     int ret = error_inject(path, OP_FSYNC);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -472,6 +494,7 @@ int unreliable_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 int unreliable_setxattr(const char *path, const char *name,
                         const char *value, size_t size, int flags)
 {
+    printf("--------fuse log -------- calling setxattr on fuse\n");
     int ret = error_inject(path, OP_SETXATTR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -494,6 +517,7 @@ int unreliable_setxattr(const char *path, const char *name,
 int unreliable_getxattr(const char *path, const char *name,
                         char *value, size_t size)
 {
+    printf("--------fuse log -------- calling getxattr on fuse\n");
     int ret = error_inject(path, OP_GETXATTR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -558,6 +582,7 @@ int unreliable_removexattr(const char *path, const char *name)
 
 int unreliable_opendir(const char *path, struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling opendir on fuse\n");
     int ret = error_inject(path, OP_OPENDIR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -565,9 +590,9 @@ int unreliable_opendir(const char *path, struct fuse_file_info *fi)
         return ret;
     }
 
-    DIR *dir = opendir(path);
+    // DIR *dir = opendir(path);
 
-  //  int res = Opendir(unreliableAFS, path, dir);
+   DIR* dir = Opendir(unreliableAFS, path);
 
     if (!dir) {
         return -errno;
@@ -580,6 +605,7 @@ int unreliable_opendir(const char *path, struct fuse_file_info *fi)
 int unreliable_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                        off_t offset, struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling readdir on fuse, path: %s\n", path);
     int ret = error_inject(path, OP_READDIR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -590,28 +616,32 @@ int unreliable_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     (void) fi;
     //
     int res;
-    
-    // ReadDir
-    char** bufs;
-    bufs = (char **)malloc(sizeof(char*)*65536);
+    res = Readdir(unreliableAFS, path, buf, filler);
 
-    res = Readdir(unreliableAFS, path, bufs);
-    if (res < 0) {
-        return res;
-    }
-    for (char* c = *bufs; c; c=*++bufs) {
-        struct dirent de;
-        memcpy(&de, &c[0], sizeof(de));
-        struct stat st;
-        memset(&st, 0, sizeof(st));
-        st.st_ino = de.d_ino;
-        st.st_mode = de.d_type << 12;
-        if (filler(buf, de.d_name, &st, 0)) {
-            break;
-        }
-    }
     
-    return 0;
+    return res;
+    // // ReadDir
+    // char** bufs;
+    // bufs = (char **)malloc(sizeof(char*)*65536);
+
+    // res = Readdir(unreliableAFS, path, bufs);
+    // printf("--------fuse log -------- readdir res: %d \n", res);
+    // if (res < 0) {
+    //     return res;
+    // }
+    // for (char* c = *bufs; c; c=*++bufs) {
+    //     struct dirent de;
+    //     memcpy(&de, &c[0], sizeof(de));
+    //     struct stat st;
+    //     memset(&st, 0, sizeof(st));
+    //     // printf("--------fuse log -------- de_dname: %s\n", c);
+    //     st.st_ino = de.d_ino;
+    //     st.st_mode = de.d_type << 12;
+    //     if (filler(buf, de.d_name, &st, 0)) {
+    //         break;
+    //     }
+    // }
+    
     // DIR* dir = opendir(path);
 
     // if(dir == NULL){
@@ -642,6 +672,7 @@ int unreliable_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 int unreliable_releasedir(const char *path, struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling releasedir on fuse\n");
     int ret = error_inject(path, OP_RELEASEDIR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -661,6 +692,7 @@ int unreliable_releasedir(const char *path, struct fuse_file_info *fi)
 
 int unreliable_fsyncdir(const char *path, int datasync, struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling fsyncdir on fuse\n");
     int ret = error_inject(path, OP_FSYNCDIR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -691,6 +723,7 @@ int unreliable_fsyncdir(const char *path, int datasync, struct fuse_file_info *f
 
 void *unreliable_init(struct fuse_conn_info *conn)
 {
+    printf("--------fuse log -------- calling init on fuse\n");
     return NULL;
 }
 
@@ -701,6 +734,7 @@ void unreliable_destroy(void *private_data)
 
 int unreliable_access(const char *path, int mode)
 {
+    printf("--------fuse log -------- calling access on fuse\n");
     int ret = error_inject(path, OP_ACCESS);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -708,7 +742,7 @@ int unreliable_access(const char *path, int mode)
         return ret;
     }
 
-    ret = access(path, mode); 
+    ret = Access(unreliableAFS, path, mode); 
     if (ret == -1) {
         return -errno;
     }
@@ -719,6 +753,7 @@ int unreliable_access(const char *path, int mode)
 int unreliable_create(const char *path, mode_t mode,
                       struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling create on fuse\n");
     int ret = error_inject(path, OP_CREAT);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -739,6 +774,7 @@ int unreliable_create(const char *path, mode_t mode,
 int unreliable_ftruncate(const char *path, off_t length,
                          struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling ftruncate on fuse\n");
     int ret = error_inject(path, OP_FTRUNCATE);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -757,6 +793,7 @@ int unreliable_ftruncate(const char *path, off_t length,
 int unreliable_fgetattr(const char *path, struct stat *buf,
                         struct fuse_file_info *fi)
 {
+    printf("--------fuse log -------- calling fgetattr on fuse\n");
     int ret = error_inject(path, OP_FGETATTR);
     if (ret == -ERRNO_NOOP) {
         return 0;
@@ -775,6 +812,7 @@ int unreliable_fgetattr(const char *path, struct stat *buf,
 int unreliable_lock(const char *path, struct fuse_file_info *fi, int cmd,
                     struct flock *fl)
 {
+    printf("--------fuse log -------- calling lock on fuse\n");
     int ret = error_inject(path, OP_LOCK);
     if (ret == -ERRNO_NOOP) {
         return 0;
