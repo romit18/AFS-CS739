@@ -355,8 +355,11 @@ class UnreliableAFS {
 	}
 
 	off_t file_size = file_info.st_size;
-	char * buf = (char *) malloc(file_size);
-	pread(fd, buf, file_size, 0);
+	char * buf = (char *) malloc(file_size - 1);
+	int read_fd = open(path.c_str(), O_RDONLY);
+	pread(read_fd, buf, file_size - 1, 0);
+	// pread(fd, buf, file_size, 0);
+	close(read_fd);
 	close_rc = close(fd);
 
 	if (close_rc == -1) {
@@ -388,8 +391,8 @@ class UnreliableAFS {
 	}
 
         request.set_path(path);
-	request.set_file(std::string(buf, file_size));
-	request.set_num_bytes(file_size);
+	request.set_file(std::string(buf, file_size - 1));
+	request.set_num_bytes(file_size - 1);
 
         CloseReply reply;
         ClientContext context;

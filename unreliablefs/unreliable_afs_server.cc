@@ -191,8 +191,9 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             std::cout<<"Opening File:"<<path<<std::endl;
             int res;
 
-            res = open(path.c_str(), request->flags());
-            //res = open(path.c_str(), request->flags(), request->mode());
+            res = open(path.c_str(), O_RDWR);
+            // res = open(path.c_str(), request->flags());
+            // res = open(path.c_str(), request->flags(), request->mode());
             if (res == -1) {
                 reply->set_err(-errno);
                 return Status::OK;
@@ -201,13 +202,13 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 	    struct stat file_info;
 	    fstat(res, &file_info);
 	    off_t file_size = file_info.st_size;
-	    char * buf = (char *) malloc(file_size);
-	    pread(res, buf, file_size, 0);
+	    char * buf = (char *) malloc(file_size - 1);
+	    pread(res, buf, file_size - 1, 0);
 	    close(res);
 
 	    reply->set_err(0);
-	    reply->set_file(std::string(buf, file_size));
-	    reply->set_num_bytes(file_size);
+	    reply->set_file(std::string(buf, file_size - 1));
+	    reply->set_num_bytes(file_size - 1);
 
 	    return Status::OK;
         }
