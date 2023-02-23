@@ -266,6 +266,7 @@ class UnreliableAFS {
             if (status.ok()) {
 		// Allocate space for fetched file and fetch
 		char* fetched_file = (char *) malloc(reply.num_bytes());
+        printf("characters: %s", reply.file().data());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
 		// Create directories in path (if not present) and write file

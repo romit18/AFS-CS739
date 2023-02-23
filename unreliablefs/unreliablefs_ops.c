@@ -329,13 +329,12 @@ int unreliable_open(const char *path, struct fuse_file_info *fi)
     } else if (ret) {
         return ret;
     }
-
     ret = Open(unreliableAFS, path, fi->flags);
-    // ret = open(path, fi->flags);
+    //ret = open(path, fi->flags);
     if (ret == -1) {
         return -errno;
     }
-    fi->fh = ret;
+    fi->fh = (int64_t) ret;
 
     return 0;
 }
@@ -352,26 +351,18 @@ int unreliable_read(const char *path, char *buf, size_t size, off_t offset,
     }
 
     int fd;
-
-    if (fi == NULL) {
-	fd = open(path, O_RDONLY);
-    } else {
-	fd = fi->fh;
-    }
-
+    fd = open(path, O_RDONLY);
+    printf("%lld\n", fd);
     if (fd == -1) {
 	return -errno;
     }
-
     ret = pread(fd, buf, size, offset);
     if (ret == -1) {
         ret = -errno;
     }
-
     if (fi == NULL) {
-	close(fd);
+	    ret = close(fd);
     }
-
     return ret;
 }
 
@@ -387,24 +378,19 @@ int unreliable_write(const char *path, const char *buf, size_t size,
     }
 
     int fd;
-    (void) fi;
-    if(fi == NULL) {
-	fd = open(path, O_WRONLY);
-    } else {
-	fd = fi->fh;
-    }
+
+    fd = open(path, O_WRONLY);
 
     if (fd == -1) {
-	return -errno;
+	    return -errno;
     }
 
     ret = pwrite(fd, buf, size, offset);
     if (ret == -1) {
         ret = -errno;
     }
-
-    if(fi == NULL) {
-        close(fd);
+    if(fi == NULL){
+        ret = close(fd);
     }
 
     return ret;
@@ -766,8 +752,8 @@ int unreliable_create(const char *path, mode_t mode,
     if (ret == -1) {
         return -errno;
     }
-    fi->fh = ret;
-
+    fi->fh = (int64_t) ret;
+    printf("hoho %d\n", fi->fh);
     return 0;    
 }
 
