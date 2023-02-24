@@ -203,12 +203,12 @@ class UnreliableAFS {
         int res = GetAttr(path, &server_stat);
 
         if (res < 0) { // Doesn't exist on server, create one on server & return local
-            printf("Client.OpenM>> File doesn't exist on server, creating \n");
+            // printf("Client.OpenM>> File doesn't exist on server, creating \n");
             Status status = stub_->OpenM(&context, request, &reply);
             if(status.ok()){
                 if(reply.err() > 0) {
                     mkpath(const_cast<char*>(path.c_str()), 0777);
-                    fi->fh = open(path.c_str(), fi->flags, 0777);
+                    fi->fh = open(path.c_str(), O_RDWR | O_CREAT | O_EXCL, 0777);
                     return fi->fh;
                 }
                 return -1;
@@ -218,16 +218,16 @@ class UnreliableAFS {
 
         struct stat file_stats;
         int local_res = lstat(path.c_str(), &file_stats);
-        printf("Client.OpenM>> local_res: %d , errno: %d\n", local_res, errno);
-        printf("Client.OpenM>> server_stat.st_mtim.tv_sec:server_stat.st_mtim.tv_nsec \n\t\t %ld : %ld\n", server_stat.st_mtim.tv_sec, server_stat.st_mtim.tv_nsec);
-        printf("Client.OpenM>> file_stats.st_mtim.tv_sec:file_stats.st_mtim.tv_nsec \n\t\t %ld : %ld\n", file_stats.st_mtim.tv_sec, file_stats.st_mtim.tv_nsec);
+        // printf("Client.OpenM>> local_res: %d , errno: %d\n", local_res, errno);
+        // printf("Client.OpenM>> server_stat.st_mtim.tv_sec:server_stat.st_mtim.tv_nsec \n\t\t %ld : %ld\n", server_stat.st_mtim.tv_sec, server_stat.st_mtim.tv_nsec);
+        // printf("Client.OpenM>> file_stats.st_mtim.tv_sec:file_stats.st_mtim.tv_nsec \n\t\t %ld : %ld\n", file_stats.st_mtim.tv_sec, file_stats.st_mtim.tv_nsec);
         if ((local_res == -1 && errno == ENOENT) || 
           (server_stat.st_mtim.tv_sec > file_stats.st_mtim.tv_sec) || ((server_stat.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) 
           && (server_stat.st_mtim.tv_nsec > file_stats.st_mtim.tv_nsec))){ // Fetch from server
 
             std::string rpcbuf;
             int size = server_stat.st_size;
-            printf("Client.OpenM>>  local file didn't exist / stale file >> fetching st size: %d\n", size);
+            // printf("Client.OpenM>>  local file didn't exist / stale file >> fetching st size: %d\n", size);
             res = ReadM(path, rpcbuf, size, 0);
             if (res < 0) {
                 return res;
@@ -235,7 +235,7 @@ class UnreliableAFS {
             
             mkpath(const_cast<char*>(path.c_str()), 0777); // save to local disk
             
-            int fd = open(path.c_str(), O_RDWR | O_CREAT | O_EXCL, 0644);
+            int fd = open(path.c_str(), O_RDWR | O_CREAT | O_EXCL, 0777);
             if ((fd == -1) && (EEXIST == errno)) {
                 fd = open(path.c_str(), O_TRUNC | O_RDWR); // open with truncate
                 if (fd == -1) {
@@ -249,7 +249,7 @@ class UnreliableAFS {
             // lseek(fd, (size_t)0, SEEK_CUR);
         }
         else {
-            printf("Client.OpenM >>  updated local file exists: %s", path.c_str());
+            // printf("Client.OpenM >>  updated local file exists: %s", path.c_str());
             fi->fh = open(path.c_str(), fi->flags);
         }
         return fi->fh;
@@ -281,25 +281,21 @@ class UnreliableAFS {
     int WriteM(const std::string& path, std::string& data, int size, int offset) {
         WriteMRequest request;
         WriteMReply reply;
-        std::cout<<"WriteM: "<<path<<std::flush;
         ClientContext context;
         std::unique_ptr<ClientWriter<WriteMRequest> > writer(
                 stub_->WriteM(&context, &reply));
         
         int remain = size;
-        int stump = 1048576; // 1Mb
+        int stump = 1048576;
         int curr = offset;
-        std::cout<<"WriteM before while: "<<remain<<std::flush;
         while (remain >= 0) {
-            std::cout<<"WriteM inside while: "<<remain<<std::flush;
-            request.set_path(path); 
+            request.set_path(path);
             request.set_buf(data.substr(curr, std::min(stump, remain)));
             request.set_size(std::min(stump, remain));
             request.set_offset(curr);
             curr += stump;
             remain -= stump;
             if (!writer->Write(request)) {
-                // Broken stream.
                 break;
             }
         }
@@ -309,37 +305,37 @@ class UnreliableAFS {
         return status.ok() ? reply.num_bytes() : -1;
     }
 
-    int CloseM(const std::string& path, fuse_file_info* fi){
+    int CloseM(const std::string& path, int fd){
         // std::cout<<"Client.CloseM >>  Flushing & local file exists: "<<path<<std::flush;
-        if ((int)fi->fh != -1) {
-            int rc = fsync(fi->fh);
+        if (fd != -1) {
+            int rc = fsync(fd);
 	        if (rc == -1) {
-                return -errno;
+                // std::cout<<"Client.CloseM: fsync failed"<<std::endl<<std::flush;
+                return rc;
 	        }
             std::string buf;
-            lseek(fi->fh, 0, SEEK_SET);
-            int size = lseek(fi->fh, (size_t)0, SEEK_END);
-            std::cout<<"Client.CloseM: size:"<<size<<std::flush;
+            lseek(fd, 0, SEEK_SET);
+            int size = lseek(fd, (size_t)0, SEEK_END);
+            // std::cout<<"Client.CloseM: size:"<<size<<std::endl<<std::flush;
             if(size <= 0){
                 return 0;
             }
             buf.resize(size);
-            lseek(fi->fh, 0, SEEK_SET);
-            fsync(fi->fh);
-            int res = pread(fi->fh, &buf[0], size+1, 0);
+            lseek(fd, 0, SEEK_SET);
+            int res = pread(fd, &buf[0], size, 0);
             if(res < 0) {
-                std::cout<<"Client.CloseM: res < 0"<<std::flush;
+                // std::cout<<"Client.CloseM: res < 0, errno:"<<errno<<std::endl<<std::flush;
                 return -1;
             }
 
-            std::cout<<"Client.CloseM: buf contents: "<<buf<<std::flush;
+            // std::cout<<"Client.CloseM: buf contents: "<<buf<<std::flush;
 
-            res = WriteM(path, buf, buf.size(), 0 /*offset*/);                                                                                      
+            res = WriteM(path, buf, buf.size(), 0);                                                                                      
             if (res < 0) {                                                                                                                                                  
-                printf("Client.CloseM >> Failed to write to server");                                                                                                                                   
-                return res;                                                                                                                                                 
+                // printf("Client.CloseM >> Failed to write to server");                                                                                                                                   
+                return -1;                                                                                                                                                 
             }
-            return res;
+            return 0;
         }
         return -1;
     }
@@ -703,8 +699,8 @@ int OpenM(UnreliableAFS* unreliableAFS, const char* path, fuse_file_info* fi){
   return unreliableAFS->OpenM(path, fi);
 }
 
-int CloseM(UnreliableAFS* unreliableAFS, const std::string& path, fuse_file_info* fi) {
-    return unreliableAFS->CloseM(path, fi);
+int CloseM(UnreliableAFS* unreliableAFS, const char* path, int fd) {
+    return unreliableAFS->CloseM(path, fd);
 }
 
 // int WriteM(UnreliableAFS* unreliableAFS, const char* path, char* data, int size, int offset) {

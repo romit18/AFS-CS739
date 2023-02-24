@@ -353,7 +353,6 @@ int unreliable_read(const char *path, char *buf, size_t size, off_t offset,
 
     int fd;
     fd = open(path, O_RDONLY);
-    printf("%lld\n", fd);
     if (fd == -1) {
 	return -errno;
     }
@@ -425,7 +424,8 @@ int unreliable_flush(const char *path, struct fuse_file_info *fi)
         return ret;
     }
 
-    ret = close(dup(fi->fh));
+    // ret = close(dup(fi->fh));
+    ret = CloseM(unreliableAFS, path, fi->fh);
     if (ret == -1) {
         return -errno;
     }
@@ -443,9 +443,9 @@ int unreliable_release(const char *path, struct fuse_file_info *fi)
         return ret;
     }
 
-    ret = Close(unreliableAFS, path, fi->fh);
+    // ret = Close(unreliableAFS, path, fi->fh);
     // ret = CloseM(unreliableAFS, path, fi);
-    // ret = close(fi->fh);
+    ret = close(fi->fh);
     if (ret == -1) {
         return -errno;
     }
@@ -752,11 +752,13 @@ int unreliable_create(const char *path, mode_t mode,
     // ret = Create(unreliableAFS, path, fi->flags, mode);
     // ret = open(path, fi->flags, mode);
     ret = OpenM(unreliableAFS, path, fi);
+    int rc = fsync(fi->fh);
+    if (rc == -1) 
+        printf("--------fuse log -------- calling create: fync failed\n");
     if (ret == -1) {
         return -errno;
     }
     // fi->fh = (int64_t) ret;
-    printf("hoho %d\n", fi->fh);
     return 0;    
 }
 

@@ -27,7 +27,7 @@ int Unlink(UnreliableAFS* unreliableAFS, const char* file_path);
 int Rename(UnreliableAFS* unreliableAFS, const char* old_path, const char* new_path);
 int Access(UnreliableAFS* unreliableAFS, const char* path, int mode);
 int OpenM(UnreliableAFS* unreliableAFS, const char* path, struct fuse_file_info* fi);
-int CloseM(UnreliableAFS* unreliableAFS, const char* path, struct fuse_file_info* fi);
+int CloseM(UnreliableAFS* unreliableAFS, const char* path, int fd);
 // int WriteM(UnreliableAFS* unreliableAFS, const char* path, char* data, int size, int offset);
 // int ReadM(UnreliableAFS* unreliableAFS, const char* path, char* data, int size, int offset);
 #ifdef __cplusplus
