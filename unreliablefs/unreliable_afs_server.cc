@@ -39,6 +39,12 @@ using unreliable_afs::OpenDirRequest;
 using unreliable_afs::OpenDirReply;
 using unreliable_afs::OpenRequest;
 using unreliable_afs::OpenReply;
+using unreliable_afs::OpenMRequest;
+using unreliable_afs::OpenMReply;
+using unreliable_afs::ReadMRequest;
+using unreliable_afs::ReadMReply;
+using unreliable_afs::WriteMRequest;
+using unreliable_afs::WriteMReply;
 using unreliable_afs::CloseRequest;
 using unreliable_afs::CloseReply;
 using unreliable_afs::UnlinkRequest;
@@ -378,6 +384,110 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             reply->set_err(res);
             return Status::OK;
         }
+
+        Status OpenM(ServerContext* context, const OpenMRequest* request,
+                OpenMReply* reply) override {
+            // default errno = 0
+            reply->set_err(0);
+
+            std::string path = server_base_directory + request->path();
+            printf("Open: %s \n", path.c_str());
+
+            int res;
+
+            res = open(path.c_str(), request->flag()); 
+            if (res == -1) {
+                reply->set_err(-errno);
+                return Status::OK;
+            }
+            close(res);
+            reply->set_err(res);
+            return Status::OK;
+        }
+
+        Status ReadM(ServerContext* context, const ReadMRequest* request,
+                ServerWriter<ReadMReply>* writer) override {
+            ReadMReply* reply = new ReadMReply();
+
+
+            reply->set_num_bytes(0);
+            int res;
+            std::string path = server_base_directory + request->path();
+            printf("ReadM: %s \n", path.c_str());
+            int size = request->size();
+            int offset = request->offset();
+
+            int fd = open(path.c_str(), O_RDONLY);
+            if (fd == -1) {
+                reply->set_num_bytes(-1);
+                return Status::OK;
+            }
+
+            std::string buf;
+            buf.resize(size);
+            
+            int b = pread(fd, &buf[0], size, offset);
+            if (b != size) {
+                printf("ReadM: PREAD didn't read %d bytes from offset %d\n", size, offset);
+            } 
+            if (b == -1) {
+                reply->set_num_bytes(-errno);
+            }
+            close(fd);
+
+            int remain = b;
+            int stump = 1048576; // 1Mb
+            int curr = 0;
+            
+            while (remain > 0) {
+                reply->set_buf(buf.substr(curr, std::min(stump, remain)));
+                reply->set_num_bytes(std::min(stump, remain));
+                curr += stump;
+                remain -= stump;
+                writer->Write(*reply);
+            }
+            return Status::OK;
+        }
+
+        Status WriteM(ServerContext* context, ServerReader<WriteMRequest>* reader,
+                     WriteMReply* reply) override { 
+            std::string path;
+            WriteMRequest request;
+            int fd = -1;
+            int res;
+            int size;
+            int offset;
+            int num_bytes = 0;
+            reply->set_num_bytes(num_bytes);
+            while (reader->Read(&request)) {
+                path = server_base_directory + request.path();
+                size = request.size();
+                offset = request.offset();
+                std::string buf = request.buf();
+                if (num_bytes == 0) {
+                    fd = open(path.c_str(), O_WRONLY);
+                    if (fd == -1) {
+                        reply->set_num_bytes(-errno);
+                        return Status::OK;
+                    }
+                    printf("WriteS: %s \n", path.c_str());
+                }
+                res = pwrite(fd, &buf[0], size, offset);
+                // pwrite returns -1 when error, and store type in errno
+                if (res == -1) {
+                    reply->set_num_bytes(-errno);
+                    return Status::OK;
+                }
+                num_bytes += res;
+            }
+            if (fd > 0) {
+                fsync(fd);
+                close(fd);
+            }
+            reply->set_num_bytes(num_bytes);
+            return Status::OK;
+        }
+
 
 };
 

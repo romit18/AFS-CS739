@@ -12,6 +12,9 @@ service UnreliableAFSProto {
     rpc ReadDir (ReadDirRequest) returns (stream ReadDirReply) {}
     rpc OpenDir (OpenDirRequest) returns (OpenDirReply) {}
     rpc Open (OpenRequest) returns (OpenReply) {}
+    rpc OpenM (OpenMRequest) returns (OpenMReply) {}
+    rpc ReadM (ReadMRequest) returns (stream ReadMReply) {}
+    rpc WriteM (stream WriteMRequest) returns (WriteMReply) {}
     rpc Close (CloseRequest) returns (CloseReply) {}
     rpc Unlink (UnlinkRequest) returns (UnlinkReply) {}
     rpc Rename (RenameRequest) returns (RenameReply) {}
@@ -84,6 +87,37 @@ message OpenReply {
   int32 err = 1;
   bytes file = 2;
   int32 num_bytes = 3;
+}
+
+message OpenMRequest {
+  string path = 1;
+  int32 flag = 2;
+}
+
+message OpenMReply {
+  int32 err = 1;
+}
+
+message ReadMRequest {
+    string path = 1;
+    int32  size = 2;
+    int32  offset = 3;
+}
+
+message ReadMReply {
+    int32 num_bytes = 1;
+    bytes buf  = 2;
+}
+
+message WriteMRequest {
+    string path = 1;
+    bytes  buf = 2;
+    int32  size = 3;
+    int32  offset = 4;
+}
+
+message WriteMReply {
+    int32 num_bytes = 1;
 }
 
 message CloseRequest {
