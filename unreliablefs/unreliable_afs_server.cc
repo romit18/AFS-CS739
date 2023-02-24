@@ -260,18 +260,18 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
                 return Status::OK;
             }
 
-	    struct stat file_info;
-	    fstat(res, &file_info);
-	    off_t file_size = file_info.st_size;
-	    char * buf = (char *) malloc(file_size - 1);
-	    pread(res, buf, file_size - 1, 0);
-	    close(res);
+            struct stat file_info;
+            fstat(res, &file_info);
+            off_t file_size = file_info.st_size;
+            char * buf = (char *) malloc(file_size - 1);
+            pread(res, buf, file_size - 1, 0);
+            close(res);
 
-	    reply->set_err(0);
-	    reply->set_file(std::string(buf, file_size - 1));
-	    reply->set_num_bytes(file_size - 1);
+            reply->set_err(0);
+            reply->set_file(std::string(buf, file_size - 1));
+            reply->set_num_bytes(file_size - 1);
 
-	    return Status::OK;
+            return Status::OK;
         }
 
         Status Close(ServerContext* context, const CloseRequest* request,

@@ -202,14 +202,19 @@ class UnreliableAFS {
         struct stat server_stat;
         int res = GetAttr(path, &server_stat);
 
-        if (res < 0) { // Doesn't exist on server, return, don't care local for now
+        if (res < 0) { // Doesn't exist on server, create one on server & return local
             printf("Client.OpenM>> File doesn't exist on server, creating \n");
             Status status = stub_->OpenM(&context, request, &reply);
-            mkpath(const_cast<char*>(path.c_str()), 0777);
-            fi->fh = open(path.c_str(), fi->flags, 0777);
-            return status.ok() ? reply.err() : -1;
+            if(status.ok()){
+                if(reply.err() > 0) {
+                    mkpath(const_cast<char*>(path.c_str()), 0777);
+                    fi->fh = open(path.c_str(), fi->flags, 0777);
+                    return fi->fh;
+                }
+                return -1;
+            }
+            return -1;
         }
-
 
         struct stat file_stats;
         int local_res = lstat(path.c_str(), &file_stats);
@@ -232,21 +237,22 @@ class UnreliableAFS {
             
             int fd = open(path.c_str(), O_RDWR | O_CREAT | O_EXCL, 0644);
             if ((fd == -1) && (EEXIST == errno)) {
-                /* open the existing file with truncate flag */
-                fd = open(path.c_str(), O_TRUNC | O_RDWR);
+                fd = open(path.c_str(), O_TRUNC | O_RDWR); // open with truncate
                 if (fd == -1) {
                     return -errno;
                 } 
             }
-            int res = pwrite(fd, &rpcbuf[0], rpcbuf.size()+1, 0 /*offset*/);
-            lseek(fd, (size_t)0, SEEK_CUR);
             fi->fh=fd;
+            int res = pwrite(fd, &rpcbuf[0], rpcbuf.size()+1, 0 /*offset*/);
+            if(res<0)
+                return -1;
+            // lseek(fd, (size_t)0, SEEK_CUR);
         }
         else {
             printf("Client.OpenM >>  updated local file exists: %s", path.c_str());
             fi->fh = open(path.c_str(), fi->flags);
         }
-        return 0;
+        return fi->fh;
     }
 
     int ReadM(const std::string& path, std::string& buf, int size, int offset) {
@@ -339,15 +345,15 @@ class UnreliableAFS {
     }
 
     int Open(const std::string& path, int flags){
-    // Open logic:
-    // Issue getattr. If the file doesn't exist on server,
-    // but exists locally, open - otherwise throw error
-    // If it exists on server, also run getattr locally
-    // If it doesn't exist in cache, fetch
-    // Compare the attributes. If modified time on server
-    // is after modified time on client, fetch
-    // Otherwise, local copy is up to date, return 0
-    // If it doesn't exist, return error
+        // Open logic:
+        // Issue getattr. If the file doesn't exist on server,
+        // but exists locally, open - otherwise throw error
+        // If it exists on server, also run getattr locally
+        // If it doesn't exist in cache, fetch
+        // Compare the attributes. If modified time on server
+        // is after modified time on client, fetch
+        // Otherwise, local copy is up to date, return 0
+        // If it doesn't exist, return error
         OpenRequest request;
         request.set_path(path);
         request.set_flags(flags);
@@ -356,14 +362,14 @@ class UnreliableAFS {
 
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0) {
-	    // We delete the file if it is a stale copy
-	    // If it was newly created we cannot access, since O_EXCL was used
+            // We delete the file if it is a stale copy
+            // If it was newly created we cannot access, since O_EXCL was used
             int rc = open(path.c_str(), flags);
             if ((rc == -1 ) && (errno == EEXIST)) {
                 return -errno;
             } else {
-		unlink(path.c_str());
-	    }
+                unlink(path.c_str());
+            }
             return rc;
         }
 
@@ -371,100 +377,101 @@ class UnreliableAFS {
         ClientContext context;
         struct stat file_stats;
         int local_res = lstat(path.c_str(), &file_stats);
-	// Dump stats into temporary file
-	char * stats_file_path = (char *) malloc(path.size() + 16);
-	snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
-	int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
-	// If modified time at server is after modified time at client,
-	// or if file is not present in cache, fetch it to cache
-	if ((rpcbuf.st_mtim.tv_sec > file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec > file_stats.st_mtim.tv_nsec))){
-	    char * tmp_path = (char *) malloc(path.size() + 8);
-	    snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
-	    // Fetch from server
+        // Dump stats into temporary file
+        char * stats_file_path = (char *) malloc(path.size() + 16);
+        snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
+        int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
+        // If modified time at server is after modified time at client,
+        // or if file is not present in cache, fetch it to cache
+        if ((rpcbuf.st_mtim.tv_sec > file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec > file_stats.st_mtim.tv_nsec))){
+            char * tmp_path = (char *) malloc(path.size() + 8);
+            snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
+            // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {
-		// Allocate space for fetched file and fetch
-		char* fetched_file = (char *) malloc(reply.num_bytes());
+                // Allocate space for fetched file and fetch
+		        char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
-		// remove previous copy and write updated file
-		// write new file to temporary copy, then unlink
-		// old copy and rename temporary copy to new file
-		// int new_file = open(tmp_path, flags | O_CREAT, 0644);
-		int new_file = open(tmp_path, flags | O_CREAT, 0777);
-		write(new_file, fetched_file, reply.num_bytes());
-		fsync(new_file);
-		fsync(new_file);
-		// Reset file offset of open fd
-		lseek(new_file, SEEK_SET, 0);
-		// Close the file and rename it
-		close(new_file);
-		unlink(path.c_str());
-		rename(tmp_path, path.c_str());
-		// Copy stats into temporary file
+                // remove previous copy and write updated file
+                // write new file to temporary copy, then unlink
+                // old copy and rename temporary copy to new file
+                // int new_file = open(tmp_path, flags | O_CREAT, 0644);
+                int new_file = open(tmp_path, flags | O_CREAT, 0777);
+                write(new_file, fetched_file, reply.num_bytes());
+                fsync(new_file);
+                fsync(new_file);
+                // Reset file offset of open fd
+                lseek(new_file, SEEK_SET, 0);
+                // Close the file and rename it
+                close(new_file);
+                unlink(path.c_str());
+                rename(tmp_path, path.c_str());
+                // Copy stats into temporary file
                 local_res = lstat(path.c_str(), &file_stats);
-		pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
-		fsync(stats_file_fd);
-		close(stats_file_fd);
-		// Return fd
-		new_file = open(path.c_str(), flags);
-		new_file = open(path.c_str(), flags);
-		return new_file;
+                pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+                fsync(stats_file_fd);
+                close(stats_file_fd);
+                // Return fd
+                new_file = open(path.c_str(), flags);
+                new_file = open(path.c_str(), flags);
+                return new_file;
                 // return reply.err();
             } else {
                 return -1;
             }
-	} else if ((local_res == -1) && (errno == ENOENT)){
-	    // Fetch from server
+        } else if ((local_res == -1) && (errno == ENOENT)){
+            // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {
-		// Allocate space for fetched file and fetch
-		char* fetched_file = (char *) malloc(reply.num_bytes());
-        printf("characters: %s", reply.file().data());
+                // Allocate space for fetched file and fetch
+                char* fetched_file = (char *) malloc(reply.num_bytes());
+                printf("characters: %s", reply.file().data());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
-		// Create directories in path (if not present) and write file
+                // Create directories in path (if not present) and write file
                 mkpath(const_cast<char*>(path.c_str()), 0777);
-		int new_file = open(path.c_str(), flags | O_CREAT, 0777);
-		// int new_file = open(path.c_str(), flags | O_CREAT, 0644);
-		write(new_file, fetched_file, reply.num_bytes());
-		fsync(new_file);
-		fsync(new_file);
-		// Reset file offset of open fd
-		lseek(new_file, SEEK_SET, 0);
-		// Copy stats into temporary file
+                int new_file = open(path.c_str(), flags | O_CREAT, 0777);
+                // int new_file = open(path.c_str(), flags | O_CREAT, 0644);
+                write(new_file, fetched_file, reply.num_bytes());
+                fsync(new_file);
+                fsync(new_file);
+                // Reset file offset of open fd
+                lseek(new_file, SEEK_SET, 0);
+                // Copy stats into temporary file
                 local_res = lstat(path.c_str(), &file_stats);
-		pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
-		fsync(stats_file_fd);
-		close(stats_file_fd);
-		// Return fd
-		return new_file;
+                pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+                fsync(stats_file_fd);
+                close(stats_file_fd);
+                // Return fd
+                return new_file;
                 // return reply.err();
             } else {
-		close(stats_file_fd);
-		unlink(stats_file_path);
+                close(stats_file_fd);
+                unlink(stats_file_path);
                 return -1;
             }
-	} else if ((rpcbuf.st_mtim.tv_sec < file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec < file_stats.st_mtim.tv_nsec))){
-		// Copy stats into temporary file
-                local_res = lstat(path.c_str(), &file_stats);
-		pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
-		fsync(stats_file_fd);
-		close(stats_file_fd);
-		return open(path.c_str(), flags);
-	}
+        } else if ((rpcbuf.st_mtim.tv_sec < file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec < file_stats.st_mtim.tv_nsec))){
+            // Copy stats into temporary file
+            local_res = lstat(path.c_str(), &file_stats);
+            pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+            fsync(stats_file_fd);
+            close(stats_file_fd);
+            return open(path.c_str(), flags);
+        }
+        return -1;
 
     }
 
     int Create(const std::string& path, int flags, int mode){
-    // Create logic:
-    // Issue getattr. If the file doesn't exist on server,
-    // create it locally, and flush on close
-    // If it exists on server, also run getattr locally
-    // If it doesn't exist, fetch
-    // Compare the attributes. We should not have to check for
-    // modified time on server being after modified time on client
-    // since create is only called for new files
+        // Create logic:
+        // Issue getattr. If the file doesn't exist on server,
+        // create it locally, and flush on close
+        // If it exists on server, also run getattr locally
+        // If it doesn't exist, fetch
+        // Compare the attributes. We should not have to check for
+        // modified time on server being after modified time on client
+        // since create is only called for new files
         OpenRequest request;
         request.set_path(path);
         request.set_flags(flags);
@@ -473,24 +480,24 @@ class UnreliableAFS {
 
         struct stat rpcbuf;
         struct stat file_stats;
-	int local_res;
+	    int local_res;
 
-	// Check if the directory in which this file
-	// supposedly resides exists on server.
-	// If it doesn't, return.
-	char * file_dirname = (char *) malloc(PATH_MAX);
-	char* c_path = new char[path.length() + 1];
-	strcpy(c_path, path.c_str());
-	file_dirname = dirname(const_cast<char*>(c_path));
-	int directory_exist = GetAttr(file_dirname, &rpcbuf);
-        // std::cout<<"Checking if dir exists"<<file_dirname<<std::endl;
-	if (directory_exist < 0) {
-		return -errno;
-	}
+        // Check if the directory in which this file
+        // supposedly resides exists on server.
+        // If it doesn't, return.
+        char * file_dirname = (char *) malloc(PATH_MAX);
+        char* c_path = new char[path.length() + 1];
+        strcpy(c_path, path.c_str());
+        file_dirname = dirname(const_cast<char*>(c_path));
+        int directory_exist = GetAttr(file_dirname, &rpcbuf);
+            // std::cout<<"Checking if dir exists"<<file_dirname<<std::endl;
+        if (directory_exist < 0) {
+            return -errno;
+        }
 
-	// Dump file stats into temporary file on open
-	char * stats_file_path = (char *) malloc(path.size() + 16);
-	snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
+        // Dump file stats into temporary file on open
+        char * stats_file_path = (char *) malloc(path.size() + 16);
+        snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
 
         // std::cout<<"After dir check"<<path<<std::endl;
         int ret = GetAttr(path, &rpcbuf);
@@ -507,9 +514,9 @@ class UnreliableAFS {
             // Copy stats into temporary file
             int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
             local_res = lstat(path.c_str(), &file_stats);
-	    pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
-	    fsync(stats_file_fd);
-	    close(stats_file_fd);
+            pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+            fsync(stats_file_fd);
+            close(stats_file_fd);
             return rc;
         }
 
@@ -517,34 +524,35 @@ class UnreliableAFS {
         ClientContext context;
         local_res = lstat(path.c_str(), &file_stats);
         // std::cout << "local file stat value is " << local_res << " at path " << path << std::endl;
-	if ((local_res == -1) && (errno == ENOENT)) {
+    	if ((local_res == -1) && (errno == ENOENT)) {
             // std::cout<<"File not found locally, but found on server"<<path<<std::endl;
-	    // Fetch from server
+	        // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {
-		// Allocate space for fetched file and fetch
-		char* fetched_file = (char *) malloc(reply.num_bytes());
+                // Allocate space for fetched file and fetch
+                char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
-		// Create directories in path (if not present) and write file
+		        // Create directories in path (if not present) and write file
                 mkpath(const_cast<char*>(path.c_str()), 0777);
-		int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, mode);
-		write(new_file, fetched_file, reply.num_bytes());
-		fsync(new_file);
-		// Reset file offset of open fd
-		lseek(new_file, SEEK_SET, 0);
+                int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, mode);
+		        write(new_file, fetched_file, reply.num_bytes());
+                fsync(new_file);
+                // Reset file offset of open fd
+                lseek(new_file, SEEK_SET, 0);
                 // Copy stats into temporary file
                 int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
                 local_res = lstat(path.c_str(), &file_stats);
-	        pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
-	        fsync(stats_file_fd);
-	        close(stats_file_fd);
-		// Return fd
-		return new_file;
+                pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+                fsync(stats_file_fd);
+                close(stats_file_fd);
+		        // Return fd
+		        return new_file;
                 // return reply.err();
             } else {
                 return -1;
             }
-	}
+	    }
+        return -1;
     }
 
     int Close(const std::string& path, int fd){
