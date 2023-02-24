@@ -329,13 +329,13 @@ int unreliable_open(const char *path, struct fuse_file_info *fi)
     } else if (ret) {
         return ret;
     }
-    // ret = OpenM(unreliableAFS, path, fi);
-    ret = Open(unreliableAFS, path, fi->flags);
+    ret = OpenM(unreliableAFS, path, fi);
+    // ret = Open(unreliableAFS, path, fi->flags);
     // ret = open(path, fi->flags);
     if (ret == -1) {
         return -errno;
     }
-    fi->fh = (int64_t) ret;
+    // fi->fh = (int64_t) ret;
     return 0;
     // return ret;
 }
@@ -749,13 +749,13 @@ int unreliable_create(const char *path, mode_t mode,
         return ret;
     }
 
-    ret = Create(unreliableAFS, path, fi->flags, mode);
+    // ret = Create(unreliableAFS, path, fi->flags, mode);
     // ret = open(path, fi->flags, mode);
-    // ret = OpenM(unreliableAFS, path, fi);
+    ret = OpenM(unreliableAFS, path, fi);
     if (ret == -1) {
         return -errno;
     }
-    fi->fh = (int64_t) ret;
+    // fi->fh = (int64_t) ret;
     printf("hoho %d\n", fi->fh);
     return 0;    
 }
