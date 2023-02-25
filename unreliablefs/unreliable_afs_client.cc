@@ -668,11 +668,13 @@ class UnreliableAFS {
         int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
         // If modified time at server is after modified time at client,
         // or if file is not present in cache, fetch it to cache
-        if ((rpcbuf.st_mtim.tv_sec > file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec > file_stats.st_mtim.tv_nsec))){
+        if ((local_res == 0) && ((rpcbuf.st_mtim.tv_sec > file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec > file_stats.st_mtim.tv_nsec)))){
+	    std::cout << "In OpenStream: Fetching a modified file to replace existing file" << std::endl;
             char * tmp_path = (char *) malloc(path.size() + 8);
             snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
 	    // Create new file
-            int new_file = open(tmp_path, flags | O_CREAT | O_EXCL, 0777);
+            int new_file = open(tmp_path, O_RDWR | O_CREAT | O_EXCL, 0777);
+            // int new_file = open(tmp_path, flags | O_CREAT | O_EXCL, 0777);
             // Allocate space for fetched data
             char* fetched_data = (char *) malloc(MEGABYTE);
             // Fetch from server
@@ -718,10 +720,13 @@ class UnreliableAFS {
                 return -1;
             }
         } else if ((local_res == -1) && (errno == ENOENT)){
+	    std::cout << "In OpenStream: Fetching a new file" << std::endl;
             // Create directories in path (if not present) and write file
             mkpath(const_cast<char*>(path.c_str()), 0777);
 	    // Create new file
-            int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, 0777);
+            int new_file = open(path.c_str(), O_CREAT | O_RDWR | O_EXCL, 0777);
+            // int new_file = open(path.c_str(), flags | O_CREAT | O_RDWR | O_EXCL, 0777);
+	    std::cout << "Writing to path " << path << std::endl;
             // Allocate space for fetched data
             char* fetched_data = (char *) malloc(MEGABYTE);
             // Fetch from server
@@ -730,7 +735,9 @@ class UnreliableAFS {
 	    while(reader->Read(&reply)) {
                 memcpy(fetched_data, (char *)reply.file().data(), reply.num_bytes());
                 printf("characters: %s\n", reply.file().data());
-                pwrite(new_file, fetched_data, reply.num_bytes(), total_bytes);
+                int write_rc = pwrite(new_file, fetched_data, reply.num_bytes(), total_bytes);
+		std::cout << "pwrite - fetched data: " << fetched_data << " num bytes: " << reply.num_bytes() << " offset:" << total_bytes  << std::endl;
+		std::cout << "Write return code: "  << write_rc << std::endl;
 		total_bytes += reply.num_bytes();
 		if(reply.err() < 0) {
                     std::cout << "Error: " << strerror(-reply.err()) << std::endl;
@@ -752,6 +759,9 @@ class UnreliableAFS {
                 fsync(stats_file_fd);
                 close(stats_file_fd);
                 // Return fd
+		// Return file with appropriate permissions
+		close(new_file);
+                new_file = open(path.c_str(), flags);
                 return new_file;
                 // return reply.err();
             } else {
@@ -760,6 +770,7 @@ class UnreliableAFS {
                 return -1;
             }
         } else if ((rpcbuf.st_mtim.tv_sec < file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec < file_stats.st_mtim.tv_nsec))){
+	    std::cout << "In OpenStream: Opening local file" << std::endl;
             // Copy stats into temporary file
             local_res = lstat(path.c_str(), &file_stats);
             pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
@@ -804,6 +815,8 @@ class UnreliableAFS {
         }
 
         // Dump file stats into temporary file on open
+	// We shouldn't need this for create - always flush on create?
+	// Already taken care of in Close, we only check timestamps if GetAttr returns 0
         char * stats_file_path = (char *) malloc(path.size() + 16);
         snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
         // Copy stats into temporary file
@@ -815,6 +828,7 @@ class UnreliableAFS {
             // std::cout<<"GetAttr return val < 0"<<path<<std::endl;
             mkpath(const_cast<char*>(path.c_str()), 777);
             // mkpath(const_cast<char*>(path.c_str()), mode);
+	    std::cout << "In CreateStream: Creating a new file" << std::endl;
             int rc = open(path.c_str(), flags, mode);
             if (rc == -1) {
                 // std::cout<<"open threw an error"<<path<<std::endl;
@@ -833,11 +847,13 @@ class UnreliableAFS {
         local_res = lstat(path.c_str(), &file_stats);
         // std::cout << "local file stat value is " << local_res << " at path " << path << std::endl;
     	if ((local_res == -1) && (errno == ENOENT)) {
+	    std::cout << "In CreateStream: Fetching a new file" << std::endl;
             // std::cout<<"File not found locally, but found on server"<<path<<std::endl;
             // Create directories in path (if not present) and write file
             mkpath(const_cast<char*>(path.c_str()), 0777);
 	    // Create new file
-            int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, 0777);
+            int new_file = open(path.c_str(), O_RDWR | O_CREAT | O_EXCL, 0777);
+            // int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, 0777);
             // Allocate space for fetched data
             char* fetched_data = (char *) malloc(MEGABYTE);
             // Fetch from server
@@ -868,6 +884,9 @@ class UnreliableAFS {
                 fsync(stats_file_fd);
                 close(stats_file_fd);
                 // Return fd
+		// Return file with appropriate permissions
+		close(new_file);
+                new_file = open(path.c_str(), flags);
                 return new_file;
                 // return reply.err();
             } else {
@@ -922,6 +941,7 @@ class UnreliableAFS {
 	// If the file has not been modified, no need to flush changes to server as long as file exists on server
 	if (rc == 0) {
 		if((file_info.st_mtim.tv_sec == file_stats_at_open.st_mtim.tv_sec) && (file_info.st_mtim.tv_nsec == file_stats_at_open.st_mtim.tv_nsec)) {
+	                std::cout << "In CloseStream: Closing unchanged file" << std::endl;
 	                unlink(stats_file_path);
 			return close_rc;
 		}
@@ -936,6 +956,7 @@ class UnreliableAFS {
 	int num_bytes = 0;
 	off_t total_bytes = 0;
 	while(total_bytes < file_size) {
+	    std::cout << "In CloseStream: Flushing changed/new file" << std::endl;
 	    num_bytes = ((file_size - total_bytes) < MEGABYTE) ? (file_size - total_bytes) : MEGABYTE;
 	    rc = pread(read_fd, buf, num_bytes, total_bytes);
 	    // pread(fd, buf, file_size, 0);
@@ -1046,7 +1067,8 @@ int Readdir(UnreliableAFS* unreliableAFS, const char* path, void* buf, fuse_fill
 }
 
 int Open(UnreliableAFS* unreliableAFS, const char* path, int flags){
-  return unreliableAFS->Open(path, flags);
+  // return unreliableAFS->Open(path, flags);
+  return unreliableAFS->OpenStream(path, flags);
 }
 
 int OpenM(UnreliableAFS* unreliableAFS, const char* path, fuse_file_info* fi){
@@ -1070,7 +1092,8 @@ int Create(UnreliableAFS* unreliableAFS, const char* path, int flags, int mode){
 }
 
 int Close(UnreliableAFS* unreliableAFS, const char* path, int fd){
-  return unreliableAFS->Close(path, fd);
+  // return unreliableAFS->Close(path, fd);
+  return unreliableAFS->CloseStream(path, fd);
 }
 
 int Unlink(UnreliableAFS* unreliableAFS, const char* path){

@@ -425,7 +425,8 @@ int unreliable_flush(const char *path, struct fuse_file_info *fi)
         return ret;
     }
 
-    ret = close(dup(fi->fh));
+    ret = Close(unreliableAFS, path, dup(fi->fh));
+    // ret = close(dup(fi->fh));
     if (ret == -1) {
         return -errno;
     }
@@ -756,7 +757,7 @@ int unreliable_create(const char *path, mode_t mode,
         return -errno;
     }
     fi->fh = (int64_t) ret;
-    printf("hoho %d\n", fi->fh);
+    // printf("hoho %d\n", fi->fh);
     return 0;    
 }
 
