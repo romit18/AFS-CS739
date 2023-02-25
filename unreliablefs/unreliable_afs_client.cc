@@ -174,7 +174,7 @@ class UnreliableAFS {
             //     break;
             // }
         }
-        // std::cout << "Greeter received: " << buf.c_str() << std::endl; 
+        // //std::cout << "Greeter received: " << buf.c_str() << std::endl; 
         Status status = reader->Finish();
 
         return status.ok() ? reply.err() : -1;
@@ -283,7 +283,7 @@ class UnreliableAFS {
     int WriteM(const std::string& path, std::string& data, int size, int offset) {
         WriteMRequest request;
         WriteMReply reply;
-        std::cout<<"WriteM: "<<path<<std::flush;
+        //std::cout<<"WriteM: "<<path<<std::flush;
         ClientContext context;
         std::unique_ptr<ClientWriter<WriteMRequest> > writer(
                 stub_->WriteM(&context, &reply));
@@ -291,9 +291,9 @@ class UnreliableAFS {
         int remain = size;
         int stump = 1048576; // 1Mb
         int curr = offset;
-        std::cout<<"WriteM before while: "<<remain<<std::flush;
+        //std::cout<<"WriteM before while: "<<remain<<std::flush;
         while (remain >= 0) {
-            std::cout<<"WriteM inside while: "<<remain<<std::flush;
+            //std::cout<<"WriteM inside while: "<<remain<<std::flush;
             request.set_path(path); 
             request.set_buf(data.substr(curr, std::min(stump, remain)));
             request.set_size(std::min(stump, remain));
@@ -312,7 +312,7 @@ class UnreliableAFS {
     }
 
     int CloseM(const std::string& path, fuse_file_info* fi){
-        // std::cout<<"Client.CloseM >>  Flushing & local file exists: "<<path<<std::flush;
+        // //std::cout<<"Client.CloseM >>  Flushing & local file exists: "<<path<<std::flush;
         if ((int)fi->fh != -1) {
             int rc = fsync(fi->fh);
 	        if (rc == -1) {
@@ -321,7 +321,7 @@ class UnreliableAFS {
             std::string buf;
             lseek(fi->fh, 0, SEEK_SET);
             int size = lseek(fi->fh, (size_t)0, SEEK_END);
-            std::cout<<"Client.CloseM: size:"<<size<<std::flush;
+            //std::cout<<"Client.CloseM: size:"<<size<<std::flush;
             if(size <= 0){
                 return 0;
             }
@@ -330,11 +330,11 @@ class UnreliableAFS {
             fsync(fi->fh);
             int res = pread(fi->fh, &buf[0], size+1, 0);
             if(res < 0) {
-                std::cout<<"Client.CloseM: res < 0"<<std::flush;
+                //std::cout<<"Client.CloseM: res < 0"<<std::flush;
                 return -1;
             }
 
-            std::cout<<"Client.CloseM: buf contents: "<<buf<<std::flush;
+            //std::cout<<"Client.CloseM: buf contents: "<<buf<<std::flush;
 
             res = WriteM(path, buf, buf.size(), 0 /*offset*/);                                                                                      
             if (res < 0) {                                                                                                                                                  
@@ -472,7 +472,7 @@ class UnreliableAFS {
         OpenRequest request;
         request.set_path(path);
         request.set_flags(flags);
-        // std::cout<<"Creating File:"<<path<<std::endl;
+        // //std::cout<<"Creating File:"<<path<<std::endl;
         // request.set_mode(mode);
 
         struct stat rpcbuf;
@@ -487,7 +487,7 @@ class UnreliableAFS {
         strcpy(c_path, path.c_str());
         file_dirname = dirname(const_cast<char*>(c_path));
         int directory_exist = GetAttr(file_dirname, &rpcbuf);
-            // std::cout<<"Checking if dir exists"<<file_dirname<<std::endl;
+            // //std::cout<<"Checking if dir exists"<<file_dirname<<std::endl;
         if (directory_exist < 0) {
             return -errno;
         }
@@ -496,15 +496,15 @@ class UnreliableAFS {
         char * stats_file_path = (char *) malloc(path.size() + 16);
         snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
 
-        // std::cout<<"After dir check"<<path<<std::endl;
+        // //std::cout<<"After dir check"<<path<<std::endl;
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0){
-            // std::cout<<"GetAttr return val < 0"<<path<<std::endl;
+            // //std::cout<<"GetAttr return val < 0"<<path<<std::endl;
             mkpath(const_cast<char*>(path.c_str()), 777);
             // mkpath(const_cast<char*>(path.c_str()), mode);
             int rc = open(path.c_str(), flags, mode);
             if (rc == -1) {
-                // std::cout<<"open threw an error"<<path<<std::endl;
+                // //std::cout<<"open threw an error"<<path<<std::endl;
                 // fprintf(stdout, "open threw an error - it is %s\n", strerror(errno));
                 return -errno;
             }
@@ -520,9 +520,9 @@ class UnreliableAFS {
         OpenReply reply;
         ClientContext context;
         local_res = lstat(path.c_str(), &file_stats);
-        // std::cout << "local file stat value is " << local_res << " at path " << path << std::endl;
+        // //std::cout << "local file stat value is " << local_res << " at path " << path << std::endl;
     	if ((local_res == -1) && (errno == ENOENT)) {
-            // std::cout<<"File not found locally, but found on server"<<path<<std::endl;
+            // //std::cout<<"File not found locally, but found on server"<<path<<std::endl;
 	        // Fetch from server
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {
@@ -555,7 +555,7 @@ class UnreliableAFS {
     int Close(const std::string& path, int fd){
         CloseRequest request;
         request.set_path(path);
-	std::cout<<"Closing File:"<<path<<std::endl;
+	//std::cout<<"Closing File:"<<path<<std::endl;
 	int rc, close_rc;
 
 	rc = fsync(fd);
@@ -643,13 +643,13 @@ class UnreliableAFS {
         request.set_path(path);
         request.set_flags(flags);
 
-	std::cout << "Opening File: " << path << std::endl;
+	//std::cout << "Opening File: " << path << std::endl;
 
         struct stat rpcbuf;
 
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0) {
-            std::cout << "Couldn't GetAttr" << std::endl;
+            //std::cout << "Couldn't GetAttr" << std::endl;
             // We delete the file if it is a stale copy
             // If it was newly created we cannot access, since O_EXCL was used
             int rc = open(path.c_str(), flags);
@@ -672,7 +672,7 @@ class UnreliableAFS {
         // If modified time at server is after modified time at client,
         // or if file is not present in cache, fetch it to cache
         if ((local_res == 0) && ((rpcbuf.st_mtim.tv_sec > file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec > file_stats.st_mtim.tv_nsec)))){
-	    std::cout << "In OpenStream: Fetching a modified file to replace existing file" << std::endl;
+	    //std::cout << "In OpenStream: Fetching a modified file to replace existing file" << std::endl;
             char * tmp_path = (char *) malloc(path.size() + 8);
             snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
 	    // Create new file
@@ -689,7 +689,7 @@ class UnreliableAFS {
                 pwrite(new_file, fetched_data, reply.num_bytes(), total_bytes);
 		total_bytes += reply.num_bytes();
 		if(reply.err() < 0) {
-                    std::cout << "Error: " << strerror(-reply.err()) << std::endl;
+                    //std::cout << "Error: " << strerror(-reply.err()) << std::endl;
                     close(new_file);
                     close(stats_file_fd);
                     unlink(tmp_path);
@@ -723,13 +723,13 @@ class UnreliableAFS {
                 return -1;
             }
         } else if ((local_res == -1) && (errno == ENOENT)){
-	    std::cout << "In OpenStream: Fetching a new file" << std::endl;
+	    //std::cout << "In OpenStream: Fetching a new file" << std::endl;
             // Create directories in path (if not present) and write file
             mkpath(const_cast<char*>(path.c_str()), 0777);
 	    // Create new file
             int new_file = open(path.c_str(), O_CREAT | O_RDWR | O_EXCL, 0777);
             // int new_file = open(path.c_str(), flags | O_CREAT | O_RDWR | O_EXCL, 0777);
-	    std::cout << "Writing to path " << path << std::endl;
+	    //std::cout << "Writing to path " << path << std::endl;
             // Allocate space for fetched data
             char* fetched_data = (char *) malloc(MEGABYTE);
             // Fetch from server
@@ -739,11 +739,11 @@ class UnreliableAFS {
                 memcpy(fetched_data, (char *)reply.file().data(), reply.num_bytes());
                 printf("characters: %s\n", reply.file().data());
                 int write_rc = pwrite(new_file, fetched_data, reply.num_bytes(), total_bytes);
-		std::cout << "pwrite - fetched data: " << fetched_data << " num bytes: " << reply.num_bytes() << " offset:" << total_bytes  << std::endl;
-		std::cout << "Write return code: "  << write_rc << std::endl;
+		//std::cout << "pwrite - fetched data: " << fetched_data << " num bytes: " << reply.num_bytes() << " offset:" << total_bytes  << std::endl;
+		//std::cout << "Write return code: "  << write_rc << std::endl;
 		total_bytes += reply.num_bytes();
 		if(reply.err() < 0) {
-                    std::cout << "Error: " << strerror(-reply.err()) << std::endl;
+                    //std::cout << "Error: " << strerror(-reply.err()) << std::endl;
                     close(new_file);
                     close(stats_file_fd);
                     unlink(path.c_str());
@@ -773,15 +773,17 @@ class UnreliableAFS {
                 return -1;
             }
         } else if ((rpcbuf.st_mtim.tv_sec < file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec <= file_stats.st_mtim.tv_nsec))){
-	    std::cout << "In OpenStream: Opening local file" << std::endl;
+	    //std::cout << "In OpenStream: Opening local file" << std::endl;
             // Copy stats into temporary file
             local_res = lstat(path.c_str(), &file_stats);
+	    //std::cout << "File stats at open seconds:" << file_stats.st_mtim.tv_sec << std::endl;
+	    //std::cout << "File stats at open nanoseconds: " << file_stats.st_mtim.tv_nsec << std::endl;
             pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
             fsync(stats_file_fd);
             close(stats_file_fd);
             return open(path.c_str(), flags);
         }
-	std::cout << "rpcbuf.st_mtim.tv_sec: " << rpcbuf.st_mtim.tv_sec << " rpcbuf.st_mtim.tv_nsec: " << rpcbuf.st_mtim.tv_nsec << " file_stats.st_mtim.tv_sec: " << file_stats.st_mtim.tv_sec << " file_stats.st_mtim.tv_nsec: " << file_stats.st_mtim.tv_nsec << std::endl;
+	//std::cout << "rpcbuf.st_mtim.tv_sec: " << rpcbuf.st_mtim.tv_sec << " rpcbuf.st_mtim.tv_nsec: " << rpcbuf.st_mtim.tv_nsec << " file_stats.st_mtim.tv_sec: " << file_stats.st_mtim.tv_sec << " file_stats.st_mtim.tv_nsec: " << file_stats.st_mtim.tv_nsec << std::endl;
         return -1;
 
     }
@@ -798,9 +800,9 @@ class UnreliableAFS {
         OpenRequest request;
         request.set_path(path);
         request.set_flags(flags);
-        // std::cout<<"Creating File:"<<path<<std::endl;
+        // //std::cout<<"Creating File:"<<path<<std::endl;
         // request.set_mode(mode);
-	std::cout << "Creating File: " << path << std::endl;
+	//std::cout << "Creating File: " << path << std::endl;
 
         struct stat rpcbuf;
         struct stat file_stats;
@@ -814,7 +816,7 @@ class UnreliableAFS {
         strcpy(c_path, path.c_str());
         file_dirname = dirname(const_cast<char*>(c_path));
         int directory_exist = GetAttr(file_dirname, &rpcbuf);
-            // std::cout<<"Checking if dir exists"<<file_dirname<<std::endl;
+            // //std::cout<<"Checking if dir exists"<<file_dirname<<std::endl;
         if (directory_exist < 0) {
             return -errno;
         }
@@ -827,16 +829,16 @@ class UnreliableAFS {
         // Copy stats into temporary file
         int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
 
-        // std::cout<<"After dir check"<<path<<std::endl;
+        // //std::cout<<"After dir check"<<path<<std::endl;
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0){
-            // std::cout<<"GetAttr return val < 0"<<path<<std::endl;
+            // //std::cout<<"GetAttr return val < 0"<<path<<std::endl;
             mkpath(const_cast<char*>(path.c_str()), 777);
             // mkpath(const_cast<char*>(path.c_str()), mode);
-	    std::cout << "In CreateStream: Creating a new file" << std::endl;
+	    //std::cout << "In CreateStream: Creating a new file" << std::endl;
             int rc = open(path.c_str(), flags, mode);
             if (rc == -1) {
-                // std::cout<<"open threw an error"<<path<<std::endl;
+                // //std::cout<<"open threw an error"<<path<<std::endl;
                 // fprintf(stdout, "open threw an error - it is %s\n", strerror(errno));
                 return -errno;
             }
@@ -850,10 +852,10 @@ class UnreliableAFS {
         OpenReply reply;
         ClientContext context;
         local_res = lstat(path.c_str(), &file_stats);
-        // std::cout << "local file stat value is " << local_res << " at path " << path << std::endl;
+        // //std::cout << "local file stat value is " << local_res << " at path " << path << std::endl;
     	if ((local_res == -1) && (errno == ENOENT)) {
-	    std::cout << "In CreateStream: Fetching a new file" << std::endl;
-            // std::cout<<"File not found locally, but found on server"<<path<<std::endl;
+	    //std::cout << "In CreateStream: Fetching a new file" << std::endl;
+            // //std::cout<<"File not found locally, but found on server"<<path<<std::endl;
             // Create directories in path (if not present) and write file
             mkpath(const_cast<char*>(path.c_str()), 0777);
 	    // Create new file
@@ -870,7 +872,7 @@ class UnreliableAFS {
                 pwrite(new_file, fetched_data, reply.num_bytes(), total_bytes);
 		total_bytes += reply.num_bytes();
 		if(reply.err() < 0) {
-                    std::cout << "Error: " << strerror(-reply.err()) << std::endl;
+                    //std::cout << "Error: " << strerror(-reply.err()) << std::endl;
                     close(new_file);
                     close(stats_file_fd);
                     unlink(path.c_str());
@@ -906,21 +908,24 @@ class UnreliableAFS {
     int CloseStream(const std::string& path, int fd){
         CloseRequest request;
         request.set_path(path);
-	std::cout<<"Closing File:"<<path<<std::endl;
+	//std::cout<<"Closing File:"<<path<<std::endl;
 	int rc, close_rc;
 
 	rc = fsync(fd);
 	if (rc == -1) {
+            //std::cout << "Fsync failed" << std::endl;
             return -errno;
 	}
 
 	struct stat file_info;
 	rc = fstat(fd, &file_info);
 	if (rc == -1) {
+            //std::cout << "Fstat failed" << std::endl;
             return -errno;
 	}
 
 	off_t file_size = file_info.st_size;
+	//std::cout << "1 File size is " << file_info.st_size << std::endl;
 	close_rc = close(fd);
 
 	if (close_rc == -1) {
@@ -931,6 +936,7 @@ class UnreliableAFS {
 	if (rc == -1) {
             return -errno;
 	}
+	//std::cout << "2 File size is " << file_info.st_size << std::endl;
 
 	// Check temporary file with stats from open
 	char * stats_file_path = (char *) malloc(path.size() + 16);
@@ -945,8 +951,16 @@ class UnreliableAFS {
 
 	// If the file has not been modified, no need to flush changes to server as long as file exists on server
 	if (rc == 0) {
-		if((file_info.st_mtim.tv_sec == file_stats_at_open.st_mtim.tv_sec) && (file_info.st_mtim.tv_nsec == file_stats_at_open.st_mtim.tv_nsec)) {
-	                std::cout << "In CloseStream: Closing unchanged file" << std::endl;
+		//std::cout << "Server has the file" << std::endl;
+		// //std::cout << "Stats at open - sec: " << file_stats_at_open.st_mtim.tv_sec << " nsec: " << file_stats_at_open.st_mtim.tv_nsec << std::endl;
+		// //std::cout << "File info at present - sec: " << file_info.st_mtim.tv_sec << " nsec: " << file_info.st_mtim.tv_nsec << std::endl;
+		// //std::cout << "" << std::endl;
+		// if((file_info.st_mtim.tv_sec == file_stats_at_open.st_mtim.tv_sec) && (file_info.st_mtim.tv_nsec == file_stats_at_open.st_mtim.tv_nsec)) {
+		std::string tmp_write_path;
+		tmp_write_path = path + ".tmpwrittenfile";
+		struct stat tmp_write_stats;
+		if(lstat(tmp_write_path.c_str(), &tmp_write_stats) == -1) {
+	                //std::cout << "In CloseStream: Closing unchanged file" << std::endl;
 	                unlink(stats_file_path);
 			return close_rc;
 		}
@@ -961,28 +975,28 @@ class UnreliableAFS {
 	int num_bytes = 0;
 	off_t total_bytes = 0;
 	while((total_bytes < file_size) || (file_size == 0)) {
-	    std::cout << "In CloseStream: Flushing changed/new file" << std::endl;
+	    //std::cout << "In CloseStream: Flushing changed/new file" << std::endl;
 	    num_bytes = ((file_size - total_bytes) < MEGABYTE) ? (file_size - total_bytes) : MEGABYTE;
 	    rc = pread(read_fd, buf, num_bytes, total_bytes);
 	    // pread(fd, buf, file_size, 0);
 	    if (rc > 0) {
-	        std::cout << "In CloseStream: after reading bytes" << std::endl;
+	        //std::cout << "In CloseStream: after reading bytes" << std::endl;
                 total_bytes += num_bytes;
                 request.set_path(path);
 	        request.set_file(std::string(buf, num_bytes));
 	        request.set_num_bytes(num_bytes);
                 if(!writer->Write(request)) {
-			std::cout << "Broken stream" << std::endl;
+			//std::cout << "Broken stream" << std::endl;
 			return -1;
 		}
             } else if ((rc == -1) && (file_size > 0)) {
-	        std::cout << "In CloseStream: read failed" << std::endl;
+	        //std::cout << "In CloseStream: read failed" << std::endl;
                 // total_bytes += num_bytes;
                 // request.set_path(path);
                 // request.set_file(std::string(buf, num_bytes));
                 // request.set_num_bytes(num_bytes);
                 // if(!writer->Write(request)) {
-		// 	std::cout << "Broken stream" << std::endl;
+		// 	//std::cout << "Broken stream" << std::endl;
 		// 	return -1;
 		// }
                 break;
@@ -991,7 +1005,7 @@ class UnreliableAFS {
                 request.set_path(path);
 	        request.set_num_bytes(num_bytes);
                 if(!writer->Write(request)) {
-			std::cout << "Broken stream" << std::endl;
+			//std::cout << "Broken stream" << std::endl;
 			return -1;
 		}
 	   }
@@ -1049,7 +1063,7 @@ class UnreliableAFS {
 };
 
 UnreliableAFS* NewUnreliableAFS(){
-  return new UnreliableAFS(grpc::CreateChannel("0.0.0.0:50051", grpc::InsecureChannelCredentials()));
+  return new UnreliableAFS(grpc::CreateChannel("c220g5-120122.wisc.cloudlab.us:50051", grpc::InsecureChannelCredentials()));
 }
 
 int Mkdir(UnreliableAFS* unreliableAFS, const char* path, int mode){
@@ -1106,7 +1120,7 @@ int CloseM(UnreliableAFS* unreliableAFS, const std::string& path, fuse_file_info
 // }
 
 int Create(UnreliableAFS* unreliableAFS, const char* path, int flags, int mode){
-  return unreliableAFS->Create(path, flags, mode);
+  return unreliableAFS->CreateStream(path, flags, mode);
 }
 
 int Close(UnreliableAFS* unreliableAFS, const char* path, int fd){
@@ -1138,12 +1152,12 @@ int Rename(UnreliableAFS* unreliableAFS, const char* old_path, const char* new_p
 //       if (arg_val[start_pos] == '=') {
 //         target_str = arg_val.substr(start_pos + 1);
 //       } else {
-//         std::cout << "The only correct argument syntax is --target="
+//         //std::cout << "The only correct argument syntax is --target="
 //                   << std::endl;
 //         return 0;
 //       }
 //     } else {
-//       std::cout << "The only acceptable argument is --target=" << std::endl;
+//       //std::cout << "The only acceptable argument is --target=" << std::endl;
 //       return 0;
 //     }
 //   } else {
@@ -1153,7 +1167,7 @@ int Rename(UnreliableAFS* unreliableAFS, const char* old_path, const char* new_p
 //       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 //   std::string dirpath("/world");
 //   int res = greeter.Mkdir(dirpath, 0777);
-//   std::cout << "Greeter received: " << res << std::endl;
+//   //std::cout << "Greeter received: " << res << std::endl;
 
 
 //   return 0;

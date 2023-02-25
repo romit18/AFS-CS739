@@ -410,6 +410,11 @@ int unreliable_write(const char *path, const char *buf, size_t size,
         close(fd);
     }
 
+    char * tmp_path = (char *) malloc(sizeof(path) + 15);
+    snprintf(tmp_path, sizeof(path) + 15, "%s.tmpwrittenfile", path);
+    int new_fd = open(tmp_path, O_CREAT | O_RDWR | 0777);
+    close(new_fd);
+
     return ret;
 }
 
@@ -441,8 +446,8 @@ int unreliable_flush(const char *path, struct fuse_file_info *fi)
         return ret;
     }
 
-    ret = Close(unreliableAFS, path, dup(fi->fh));
-    // ret = close(dup(fi->fh));
+    // ret = Close(unreliableAFS, path, dup(fi->fh));
+    ret = close(dup(fi->fh));
     if (ret == -1) {
         return -errno;
     }

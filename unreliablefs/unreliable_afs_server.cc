@@ -69,12 +69,12 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             // default errno = 0
             reply->set_err(0);
             std::string path = server_base_directory + request->path();
-            std::cout<<"Making Directory:"<<path<<std::endl;
+            //std::cout<<"Making Directory:"<<path<<std::endl;
             int res;
 
             res = mkdir(path.c_str(), request->mode());
-            std::cout<<"Making result:"<<res<<std::endl;
-            std::cout<<"Request path:"<<request->path()<<std::endl;
+            //std::cout<<"Making result:"<<res<<std::endl;
+            //std::cout<<"Request path:"<<request->path()<<std::endl;
             if (res == -1) {
                 reply->set_err(-errno);
                 return Status::OK;
@@ -251,7 +251,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
                 OpenReply* reply) override {
             reply->set_err(0);
             std::string path = server_base_directory + request->path();
-            std::cout<<"Opening File:"<<path<<std::endl;
+            //std::cout<<"Opening File:"<<path<<std::endl;
             int res;
 
             res = open(path.c_str(), O_RDONLY);
@@ -280,7 +280,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
                 CloseReply* reply) override {
             reply->set_err(0);
             std::string path = server_base_directory + request->path();
-            std::cout<<"Server closing File:"<<path<<std::endl;
+            //std::cout<<"Server closing File:"<<path<<std::endl;
             int rc;
 	    struct stat dir_stats, file_stats;
 
@@ -294,11 +294,11 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 		reply->set_err(-errno);
                 return Status::OK;
 	    }
-	    // std::cout << "Directory exists" << std::endl;
+	    // //std::cout << "Directory exists" << std::endl;
 
 	    rc = lstat(path.c_str(), &file_stats);
 	    if ((rc == -1) && (errno == ENOENT)){
-	        // std::cout << "new file" << std::endl;
+	        // //std::cout << "new file" << std::endl;
 		int num_bytes = request->num_bytes();
 		char * fetched_file = (char *) malloc(num_bytes);
 		memcpy(fetched_file, (char *)request->file().data(), num_bytes);
@@ -318,7 +318,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 		reply->set_m_tim(time_buf);
             } else if (rc == 0) {
 		// Create a temporary file
-	        // std::cout << "existing file" << std::endl;
+	        // //std::cout << "existing file" << std::endl;
 		char * tmp_path = (char *) malloc(path.size() + 8);
 		snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
 		int num_bytes = request->num_bytes();
@@ -357,7 +357,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 	    OpenReply reply;
             reply.set_err(0);
             std::string path = server_base_directory + request->path();
-            std::cout<<"Opening File:"<<path<<std::endl;
+            //std::cout<<"Opening File:"<<path<<std::endl;
             int res, rc;
 
             res = open(path.c_str(), O_RDONLY);
@@ -410,7 +410,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             int rc, new_file;
 	    int exists = 0;
 	    struct stat dir_stats, file_stats;
-	    std::cout << "In CloseStream" << std::endl;
+	    //std::cout << "In CloseStream" << std::endl;
 
             // Allocate space for fetched data
             char* fetched_data = (char *) malloc(MEGABYTE);
@@ -418,10 +418,10 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             off_t total_bytes = 0;
 
             while(reader->Read(&request)) {
-                std::cout<<"Server closing File:"<<path<<std::endl;
+                //std::cout<<"Server closing File:"<<path<<std::endl;
 		if(request.num_bytes() == 0) {
                     path = server_base_directory + request.path();
-                    std::cout<<"Server creating empty file:"<<path<<std::endl;
+                    //std::cout<<"Server creating empty file:"<<path<<std::endl;
 	            char * file_dirname = (char *) malloc(PATH_MAX);
 	            char * c_path = new char[path.length() + 1];
                     strcpy(c_path, path.c_str());
@@ -436,7 +436,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 		}
                 if (total_bytes == 0) {
                     path = server_base_directory + request.path();
-                    std::cout<<"Server closing File:"<<path<<std::endl;
+                    //std::cout<<"Server closing File:"<<path<<std::endl;
 	            // Check if directory we're writing to exists
 	            char * file_dirname = (char *) malloc(PATH_MAX);
 	            char * c_path = new char[path.length() + 1];
@@ -448,7 +448,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
                         return Status::CANCELLED;
 	            }
                     free(file_dirname);
-	            // std::cout << "Directory exists" << std::endl;
+	            // //std::cout << "Directory exists" << std::endl;
 	            rc = lstat(path.c_str(), &file_stats);
 
                     // Check if the file already exists, or if it is new and must be created
@@ -457,7 +457,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
                         new_file = open(path.c_str(), O_CREAT | O_RDWR | O_EXCL, 0777);
                         } else if (rc == 0) {
 	                // Create a temporary file
-	                // std::cout << "existing file" << std::endl;
+	                // //std::cout << "existing file" << std::endl;
                         tmp_path = path + ".tmpbak";
 	                // Create new file
                         new_file = open(tmp_path.c_str(), O_CREAT | O_RDWR | O_EXCL, 0777);
@@ -472,15 +472,15 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
                 pwrite(new_file, fetched_data, request.num_bytes(), total_bytes);
                 total_bytes += request.num_bytes();
                 // if(request.err() < 0) {
-                //     std::cout << "Error: " << strerror(-request.err()) << std::endl;
+                //     //std::cout << "Error: " << strerror(-request.err()) << std::endl;
                 //     close(new_file);
                 //     unlink(new_file);
                 //     return request.err();
                 // }
             }
-	    // std::cout << "new file" << std::endl;
+	    // //std::cout << "new file" << std::endl;
             // Reset file offset of open fd
-	    std::cout << "After Transfer" << std::endl;
+	    //std::cout << "After Transfer" << std::endl;
 	    lseek(new_file, SEEK_SET, 0);
 	    fsync(new_file);
 	    rc = close(new_file);
@@ -663,7 +663,7 @@ void RunServer(std::string base_path_str) {
   builder.RegisterService(&service);
   // Finally assemble the server.
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+  //std::cout << "Server listening on " << server_address << std::endl;
 
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
@@ -682,12 +682,12 @@ int main(int argc, char** argv) {
       if (arg_val[start_pos] == '=') {
         base_path_str = arg_val.substr(start_pos + 1);
       } else {
-        std::cout << "The only correct argument syntax is --base="
+        //std::cout << "The only correct argument syntax is --base="
                   << std::endl;
         return 0;
       }
     } else {
-      std::cout << "The only acceptable argument is --base=" << std::endl;
+      //std::cout << "The only acceptable argument is --base=" << std::endl;
       return 0;
     }
   } else {
