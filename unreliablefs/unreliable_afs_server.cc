@@ -465,7 +465,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
                 offset = request.offset();
                 std::string buf = request.buf();
                 if (num_bytes == 0) {
-                    fd = open(path.c_str(), O_WRONLY);
+                    fd = open(path.c_str(),  O_TRUNC | O_WRONLY );
                     if (fd == -1) {
                         reply->set_num_bytes(-errno);
                         return Status::OK;

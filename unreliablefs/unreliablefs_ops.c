@@ -351,17 +351,17 @@ int unreliable_read(const char *path, char *buf, size_t size, off_t offset,
         return ret;
     }
 
-    int fd;
-    fd = open(path, O_RDONLY);
-    if (fd == -1) {
-	return -errno;
+    // int fd;
+    // fd = open(path, O_RDONLY);
+    if ((int)fi->fh == -1) {
+	    return -errno;
     }
-    ret = pread(fd, buf, size, offset);
+    ret = pread((int)fi->fh, buf, size, offset);
     if (ret == -1) {
         ret = -errno;
     }
     if (fi == NULL) {
-	    ret = close(fd);
+	    ret = close((int)fi->fh);
     }
     return ret;
 }
@@ -377,20 +377,22 @@ int unreliable_write(const char *path, const char *buf, size_t size,
         return ret;
     }
 
-    int fd;
+    // int fd;
 
-    fd = open(path, O_WRONLY);
+    // fd = open(path, O_WRONLY);
 
-    if (fd == -1) {
+    // if (fd == -1) {
+	//     return -errno;
+    // }
+     if ((int)fi->fh == -1) {
 	    return -errno;
     }
-
-    ret = pwrite(fd, buf, size, offset);
+    ret = pwrite((int)fi->fh, buf, size, offset);
     if (ret == -1) {
         ret = -errno;
     }
     if(fi == NULL){
-        ret = close(fd);
+        ret = close((int)fi->fh);
     }
 
     return ret;

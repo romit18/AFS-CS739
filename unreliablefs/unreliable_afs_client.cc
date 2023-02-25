@@ -208,7 +208,7 @@ class UnreliableAFS {
             if(status.ok()){
                 if(reply.err() > 0) {
                     mkpath(const_cast<char*>(path.c_str()), 0777);
-                    fi->fh = open(path.c_str(), O_RDWR | O_CREAT | O_EXCL, 0777);
+                    fi->fh = open(path.c_str(), O_RDWR | O_CREAT | O_EXCL | O_APPEND, 0777);
                     return fi->fh;
                 }
                 return -1;
@@ -228,7 +228,7 @@ class UnreliableAFS {
             std::string rpcbuf;
             int size = server_stat.st_size;
             // printf("Client.OpenM>>  local file didn't exist / stale file >> fetching st size: %d\n", size);
-            res = ReadM(path, rpcbuf, size, 0);
+            res = ReadM(path, rpcbuf, size-1, 0);
             if (res < 0) {
                 return res;
             }
@@ -243,7 +243,7 @@ class UnreliableAFS {
                 } 
             }
             fi->fh=fd;
-            int res = pwrite(fd, &rpcbuf[0], rpcbuf.size()+1, 0 /*offset*/);
+            int res = pwrite(fd, &rpcbuf[0], rpcbuf.size(), 0 /*offset*/);
             if(res<0)
                 return -1;
             // lseek(fd, (size_t)0, SEEK_CUR);
@@ -325,6 +325,7 @@ class UnreliableAFS {
             int res = pread(fd, &buf[0], size, 0);
             if(res < 0) {
                 // std::cout<<"Client.CloseM: res < 0, errno:"<<errno<<std::endl<<std::flush;
+                close(fd);
                 return -1;
             }
 
@@ -335,6 +336,7 @@ class UnreliableAFS {
                 // printf("Client.CloseM >> Failed to write to server");                                                                                                                                   
                 return -1;                                                                                                                                                 
             }
+	        close(fd);
             return 0;
         }
         return -1;
