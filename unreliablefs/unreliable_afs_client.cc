@@ -323,6 +323,7 @@ class UnreliableAFS {
             //     return rc;
 	        // }
             if(isWritten(path)){
+                written.erase(path);
                 //std::cout<<"Client.CloseM: isWritten true:"<<path<<std::endl<<std::flush;
                 std::string buf="";
                 lseek(fd, 0, SEEK_SET);
