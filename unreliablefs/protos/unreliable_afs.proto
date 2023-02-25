@@ -12,10 +12,12 @@ service UnreliableAFSProto {
     rpc ReadDir (ReadDirRequest) returns (stream ReadDirReply) {}
     rpc OpenDir (OpenDirRequest) returns (OpenDirReply) {}
     rpc Open (OpenRequest) returns (OpenReply) {}
+    rpc OpenStream (OpenRequest) returns (stream OpenReply) {}
     rpc OpenM (OpenMRequest) returns (OpenMReply) {}
     rpc ReadM (ReadMRequest) returns (stream ReadMReply) {}
     rpc WriteM (stream WriteMRequest) returns (WriteMReply) {}
     rpc Close (CloseRequest) returns (CloseReply) {}
+    rpc CloseStream (stream CloseRequest) returns (CloseReply) {}
     rpc Unlink (UnlinkRequest) returns (UnlinkReply) {}
     rpc Rename (RenameRequest) returns (RenameReply) {}
     rpc Access (AccessRequest) returns (AccessReply) {}

@@ -17,6 +17,8 @@
 
 #include "unreliable_afs.grpc.pb.h"
 
+#define MEGABYTE 1024*1024
+
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
@@ -126,7 +128,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
         Status GetXAttr(ServerContext* context, const GetXAttrRequest* request,
                 GetXAttrReply* reply) override {
             // int res;
-            struct stat stbuf;
+            // struct stat stbuf;
             std::string path = server_base_directory + request->path();
             printf("GetXAttr: %s \n", path.c_str());
 
@@ -252,7 +254,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             std::cout<<"Opening File:"<<path<<std::endl;
             int res;
 
-            res = open(path.c_str(), O_RDWR);
+            res = open(path.c_str(), O_RDONLY);
             // res = open(path.c_str(), request->flags());
             // res = open(path.c_str(), request->flags(), request->mode());
             if (res == -1) {
@@ -350,6 +352,142 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             return Status::OK;
         }
 
+        Status OpenStream(ServerContext* context, const OpenRequest* request,
+                ServerWriter<OpenReply>* writer) override {
+	    OpenReply reply;
+            reply.set_err(0);
+            std::string path = server_base_directory + request->path();
+            std::cout<<"Opening File:"<<path<<std::endl;
+            int res, rc;
+
+            res = open(path.c_str(), O_RDONLY);
+            // res = open(path.c_str(), request->flags());
+            // res = open(path.c_str(), request->flags(), request->mode());
+            if (res == -1) {
+                reply.set_err(-errno);
+                return Status::OK;
+            }
+
+            struct stat file_info;
+            fstat(res, &file_info);
+            off_t file_size = file_info.st_size;
+            // char * buf = (char *) malloc(file_size - 1);
+            char * buf = (char *) malloc(MEGABYTE);
+
+
+	    off_t total_bytes = 0;
+	    int num_bytes = 0;
+
+	    while(total_bytes < file_size) {
+                    num_bytes = ((file_size - total_bytes) < MEGABYTE) ? (file_size - total_bytes) : MEGABYTE;
+                    rc = pread(res, buf, num_bytes, total_bytes);
+		    if (rc > 0) {
+			total_bytes += num_bytes;
+                        reply.set_err(0);
+                        reply.set_file(std::string(buf, num_bytes));
+                        reply.set_num_bytes(num_bytes);
+			writer->Write(reply);
+		    } else if (rc == -1) {
+			total_bytes += num_bytes;
+                        reply.set_err(-errno);
+                        reply.set_file(std::string(buf, num_bytes));
+                        reply.set_num_bytes(num_bytes);
+			writer->Write(reply);
+			break;
+		    }
+	    }
+
+            close(res);
+
+            return Status::OK;
+        }
+
+        Status CloseStream(ServerContext* context, ServerReader<CloseRequest>* reader,
+                CloseReply* reply) override {
+	    CloseRequest request;
+	    std::string path, tmp_path;
+            reply->set_err(0);
+            int rc, new_file;
+	    int exists = 0;
+	    struct stat dir_stats, file_stats;
+
+            // Allocate space for fetched data
+            char* fetched_data = (char *) malloc(MEGABYTE);
+            // Fetch from client
+            off_t total_bytes = 0;
+
+            while(reader->Read(&request)) {
+                if (total_bytes == 0) {
+                    path = server_base_directory + request.path();
+                    std::cout<<"Server closing File:"<<path<<std::endl;
+	            // Check if directory we're writing to exists
+	            char * file_dirname = (char *) malloc(PATH_MAX);
+	            char * c_path = new char[path.length() + 1];
+                    strcpy(c_path, path.c_str());
+                    file_dirname = dirname(const_cast<char*>(c_path));
+	            rc = lstat(file_dirname, &dir_stats);
+                    if (rc == -1) {
+                        reply->set_err(-errno);
+                        return Status::CANCELLED;
+	            }
+                    free(file_dirname);
+	            // std::cout << "Directory exists" << std::endl;
+	            rc = lstat(path.c_str(), &file_stats);
+
+                    // Check if the file already exists, or if it is new and must be created
+	            if ((rc == -1) && (errno == ENOENT)){
+	                // Create new file
+                        new_file = open(path.c_str(), O_CREAT | O_RDWR | O_EXCL, 0777);
+                        } else if (rc == 0) {
+	                // Create a temporary file
+	                // std::cout << "existing file" << std::endl;
+                        tmp_path = path + ".tmpbak";
+	                // Create new file
+                        new_file = open(tmp_path.c_str(), O_CREAT | O_RDWR | O_EXCL, 0777);
+                        exists = 1;
+                        } else {
+	                    reply->set_err(-errno);
+                            return Status::CANCELLED;
+                        }
+	        }
+                memcpy(fetched_data, (char *)request.file().data(), request.num_bytes());
+                printf("characters: %s\n", request.file().data());
+                pwrite(new_file, fetched_data, request.num_bytes(), total_bytes);
+                total_bytes += request.num_bytes();
+                // if(request.err() < 0) {
+                //     std::cout << "Error: " << strerror(-request.err()) << std::endl;
+                //     close(new_file);
+                //     unlink(new_file);
+                //     return request.err();
+                // }
+            }
+	    // std::cout << "new file" << std::endl;
+            // Reset file offset of open fd
+	    lseek(new_file, SEEK_SET, 0);
+	    fsync(new_file);
+	    rc = close(new_file);
+	    // If the file existed, we need to delete the old version and rename the temporary version
+	    if (exists == 1) {
+	        unlink(path.c_str());
+	        rename(tmp_path.c_str(), path.c_str());
+	    }
+	    // Extract modified time and send it
+	    lstat(path.c_str(), &file_stats);
+	    std::string time_buf;
+	    time_buf.resize(sizeof(struct timespec));
+            assert(time_buf.size() == sizeof(struct timespec));
+            struct timespec modified_time = file_stats.st_mtim;
+            memcpy(&time_buf[0], &modified_time, time_buf.size());
+            reply->set_m_tim(time_buf);
+
+	    if (rc == -1) {
+                reply->set_err(-errno);
+	    } else {
+                reply->set_err(0);
+	    }
+            return Status::OK;
+        }
+
         Status Unlink(ServerContext* context, const UnlinkRequest* request,
                 UnlinkReply* reply) override {
             reply->set_err(0);
@@ -411,7 +549,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
 
 
             reply->set_num_bytes(0);
-            int res;
+            // int res;
             std::string path = server_base_directory + request->path();
             printf("ReadM: %s \n", path.c_str());
             int size = request->size();

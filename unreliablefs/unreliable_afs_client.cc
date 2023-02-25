@@ -11,6 +11,8 @@
 #include <fuse.h>
 #include "unreliable_afs.grpc.pb.h"
 
+#define MEGABYTE 1024*1024
+
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::ClientReader;
@@ -390,8 +392,7 @@ class UnreliableAFS {
             Status status = stub_->Open(&context, request, &reply);
             if (status.ok()) {
                 // Allocate space for fetched file and fetch
-		        char* fetched_file = (char *) malloc(reply.num_bytes());
-                memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
+		char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
                 // remove previous copy and write updated file
                 // write new file to temporary copy, then unlink
@@ -399,7 +400,6 @@ class UnreliableAFS {
                 // int new_file = open(tmp_path, flags | O_CREAT, 0644);
                 int new_file = open(tmp_path, flags | O_CREAT, 0777);
                 write(new_file, fetched_file, reply.num_bytes());
-                fsync(new_file);
                 fsync(new_file);
                 // Reset file offset of open fd
                 lseek(new_file, SEEK_SET, 0);
@@ -414,7 +414,6 @@ class UnreliableAFS {
                 close(stats_file_fd);
                 // Return fd
                 new_file = open(path.c_str(), flags);
-                new_file = open(path.c_str(), flags);
                 return new_file;
                 // return reply.err();
             } else {
@@ -428,13 +427,11 @@ class UnreliableAFS {
                 char* fetched_file = (char *) malloc(reply.num_bytes());
                 printf("characters: %s", reply.file().data());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
-                memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
                 // Create directories in path (if not present) and write file
                 mkpath(const_cast<char*>(path.c_str()), 0777);
                 int new_file = open(path.c_str(), flags | O_CREAT, 0777);
                 // int new_file = open(path.c_str(), flags | O_CREAT, 0644);
                 write(new_file, fetched_file, reply.num_bytes());
-                fsync(new_file);
                 fsync(new_file);
                 // Reset file offset of open fd
                 lseek(new_file, SEEK_SET, 0);
@@ -532,10 +529,10 @@ class UnreliableAFS {
                 // Allocate space for fetched file and fetch
                 char* fetched_file = (char *) malloc(reply.num_bytes());
                 memcpy(fetched_file, (char *)reply.file().data(), reply.num_bytes());
-		        // Create directories in path (if not present) and write file
+		// Create directories in path (if not present) and write file
                 mkpath(const_cast<char*>(path.c_str()), 0777);
                 int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, mode);
-		        write(new_file, fetched_file, reply.num_bytes());
+		write(new_file, fetched_file, reply.num_bytes());
                 fsync(new_file);
                 // Reset file offset of open fd
                 lseek(new_file, SEEK_SET, 0);
@@ -615,6 +612,359 @@ class UnreliableAFS {
         CloseReply reply;
         ClientContext context;
         Status status = stub_->Close(&context, request, &reply);
+	if (status.ok()) {
+            struct timespec updated_time[2];
+            rc = lstat(path.c_str(), &file_info);
+            updated_time[0] = file_info.st_atim;
+            // struct stat server_stats;
+            // rc = GetAttr(path, &server_stats);
+            memcpy(&updated_time[1], (reply.m_tim()).data(), sizeof(struct timespec));
+            utimensat(AT_FDCWD, path.c_str(), updated_time, 0);
+            // futimens may not be needed
+            // int time_fd = open(path.c_str(), O_RDWR);
+            // futimens(time_fd, updated_time);
+            // close(time_fd);
+	}
+	unlink(stats_file_path);
+        return status.ok() ? reply.err() : -1;
+    }
+
+    int OpenStream(const std::string& path, int flags){
+        // Open logic:
+        // Issue getattr. If the file doesn't exist on server,
+        // but exists locally, open - otherwise throw error
+        // If it exists on server, also run getattr locally
+        // If it doesn't exist in cache, fetch
+        // Compare the attributes. If modified time on server
+        // is after modified time on client, fetch
+        // Otherwise, local copy is up to date, return 0
+        // If it doesn't exist, return error
+        OpenRequest request;
+        request.set_path(path);
+        request.set_flags(flags);
+
+        struct stat rpcbuf;
+
+        int ret = GetAttr(path, &rpcbuf);
+        if (ret < 0) {
+            // We delete the file if it is a stale copy
+            // If it was newly created we cannot access, since O_EXCL was used
+            int rc = open(path.c_str(), flags);
+            if ((rc == -1 ) && (errno == EEXIST)) {
+                return -errno;
+            } else {
+                unlink(path.c_str());
+            }
+            return rc;
+        }
+
+        OpenReply reply;
+        ClientContext context;
+        struct stat file_stats;
+        int local_res = lstat(path.c_str(), &file_stats);
+        // Dump stats into temporary file
+        char * stats_file_path = (char *) malloc(path.size() + 16);
+        snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
+        int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
+        // If modified time at server is after modified time at client,
+        // or if file is not present in cache, fetch it to cache
+        if ((rpcbuf.st_mtim.tv_sec > file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec > file_stats.st_mtim.tv_nsec))){
+            char * tmp_path = (char *) malloc(path.size() + 8);
+            snprintf(tmp_path, path.size() + 7, "%s.tmpbak", path.c_str());
+	    // Create new file
+            int new_file = open(tmp_path, flags | O_CREAT | O_EXCL, 0777);
+            // Allocate space for fetched data
+            char* fetched_data = (char *) malloc(MEGABYTE);
+            // Fetch from server
+            // Status status = stub_->Open(&context, request, &reply);
+	    std::unique_ptr<ClientReader<OpenReply>> reader(stub_->OpenStream(&context, request));
+	    off_t total_bytes = 0;
+	    while(reader->Read(&reply)) {
+                memcpy(fetched_data, (char *)reply.file().data(), reply.num_bytes());
+                pwrite(new_file, fetched_data, reply.num_bytes(), total_bytes);
+		total_bytes += reply.num_bytes();
+		if(reply.err() < 0) {
+                    std::cout << "Error: " << strerror(-reply.err()) << std::endl;
+                    close(new_file);
+                    close(stats_file_fd);
+                    unlink(tmp_path);
+                    unlink(stats_file_path);
+                    return reply.err();
+		}
+	    }
+	    Status status = reader->Finish();
+            if (status.ok()) {
+                // remove previous copy and write updated file
+                // write new file to temporary copy, then unlink
+                // old copy and rename temporary copy to new file
+                // int new_file = open(tmp_path, flags | O_CREAT, 0644);
+                fsync(new_file);
+                // Reset file offset of open fd
+                lseek(new_file, SEEK_SET, 0);
+                // Close the file and rename it
+                close(new_file);
+                unlink(path.c_str());
+                rename(tmp_path, path.c_str());
+                // Copy stats into temporary file
+                local_res = lstat(path.c_str(), &file_stats);
+                pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+                fsync(stats_file_fd);
+                close(stats_file_fd);
+                // Return fd
+                new_file = open(path.c_str(), flags);
+                return new_file;
+                // return reply.err();
+            } else {
+                return -1;
+            }
+        } else if ((local_res == -1) && (errno == ENOENT)){
+            // Create directories in path (if not present) and write file
+            mkpath(const_cast<char*>(path.c_str()), 0777);
+	    // Create new file
+            int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, 0777);
+            // Allocate space for fetched data
+            char* fetched_data = (char *) malloc(MEGABYTE);
+            // Fetch from server
+	    std::unique_ptr<ClientReader<OpenReply>> reader(stub_->OpenStream(&context, request));
+	    off_t total_bytes = 0;
+	    while(reader->Read(&reply)) {
+                memcpy(fetched_data, (char *)reply.file().data(), reply.num_bytes());
+                printf("characters: %s\n", reply.file().data());
+                pwrite(new_file, fetched_data, reply.num_bytes(), total_bytes);
+		total_bytes += reply.num_bytes();
+		if(reply.err() < 0) {
+                    std::cout << "Error: " << strerror(-reply.err()) << std::endl;
+                    close(new_file);
+                    close(stats_file_fd);
+                    unlink(path.c_str());
+                    unlink(stats_file_path);
+                    return reply.err();
+		}
+	    }
+	    Status status = reader->Finish();
+            if (status.ok()) {
+                fsync(new_file);
+                // Reset file offset of open fd
+                lseek(new_file, SEEK_SET, 0);
+                // Copy stats into temporary file
+                local_res = lstat(path.c_str(), &file_stats);
+                pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+                fsync(stats_file_fd);
+                close(stats_file_fd);
+                // Return fd
+                return new_file;
+                // return reply.err();
+            } else {
+                close(stats_file_fd);
+                unlink(stats_file_path);
+                return -1;
+            }
+        } else if ((rpcbuf.st_mtim.tv_sec < file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec < file_stats.st_mtim.tv_nsec))){
+            // Copy stats into temporary file
+            local_res = lstat(path.c_str(), &file_stats);
+            pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+            fsync(stats_file_fd);
+            close(stats_file_fd);
+            return open(path.c_str(), flags);
+        }
+        return -1;
+
+    }
+
+    int CreateStream(const std::string& path, int flags, int mode){
+        // Create logic:
+        // Issue getattr. If the file doesn't exist on server,
+        // create it locally, and flush on close
+        // If it exists on server, also run getattr locally
+        // If it doesn't exist, fetch
+        // Compare the attributes. We should not have to check for
+        // modified time on server being after modified time on client
+        // since create is only called for new files
+        OpenRequest request;
+        request.set_path(path);
+        request.set_flags(flags);
+        // std::cout<<"Creating File:"<<path<<std::endl;
+        // request.set_mode(mode);
+
+        struct stat rpcbuf;
+        struct stat file_stats;
+        int local_res;
+
+        // Check if the directory in which this file
+        // supposedly resides exists on server.
+        // If it doesn't, return.
+        char * file_dirname = (char *) malloc(PATH_MAX);
+        char* c_path = new char[path.length() + 1];
+        strcpy(c_path, path.c_str());
+        file_dirname = dirname(const_cast<char*>(c_path));
+        int directory_exist = GetAttr(file_dirname, &rpcbuf);
+            // std::cout<<"Checking if dir exists"<<file_dirname<<std::endl;
+        if (directory_exist < 0) {
+            return -errno;
+        }
+
+        // Dump file stats into temporary file on open
+        char * stats_file_path = (char *) malloc(path.size() + 16);
+        snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
+        // Copy stats into temporary file
+        int stats_file_fd = open(stats_file_path, O_RDWR | O_CREAT, 0777);
+
+        // std::cout<<"After dir check"<<path<<std::endl;
+        int ret = GetAttr(path, &rpcbuf);
+        if (ret < 0){
+            // std::cout<<"GetAttr return val < 0"<<path<<std::endl;
+            mkpath(const_cast<char*>(path.c_str()), 777);
+            // mkpath(const_cast<char*>(path.c_str()), mode);
+            int rc = open(path.c_str(), flags, mode);
+            if (rc == -1) {
+                // std::cout<<"open threw an error"<<path<<std::endl;
+                // fprintf(stdout, "open threw an error - it is %s\n", strerror(errno));
+                return -errno;
+            }
+            local_res = lstat(path.c_str(), &file_stats);
+            pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+            fsync(stats_file_fd);
+            close(stats_file_fd);
+            return rc;
+        }
+
+        OpenReply reply;
+        ClientContext context;
+        local_res = lstat(path.c_str(), &file_stats);
+        // std::cout << "local file stat value is " << local_res << " at path " << path << std::endl;
+    	if ((local_res == -1) && (errno == ENOENT)) {
+            // std::cout<<"File not found locally, but found on server"<<path<<std::endl;
+            // Create directories in path (if not present) and write file
+            mkpath(const_cast<char*>(path.c_str()), 0777);
+	    // Create new file
+            int new_file = open(path.c_str(), flags | O_CREAT | O_EXCL, 0777);
+            // Allocate space for fetched data
+            char* fetched_data = (char *) malloc(MEGABYTE);
+            // Fetch from server
+	    std::unique_ptr<ClientReader<OpenReply>> reader(stub_->OpenStream(&context, request));
+	    off_t total_bytes = 0;
+	    while(reader->Read(&reply)) {
+                memcpy(fetched_data, (char *)reply.file().data(), reply.num_bytes());
+                printf("characters: %s\n", reply.file().data());
+                pwrite(new_file, fetched_data, reply.num_bytes(), total_bytes);
+		total_bytes += reply.num_bytes();
+		if(reply.err() < 0) {
+                    std::cout << "Error: " << strerror(-reply.err()) << std::endl;
+                    close(new_file);
+                    close(stats_file_fd);
+                    unlink(path.c_str());
+                    unlink(stats_file_path);
+                    return reply.err();
+		}
+	    }
+	    Status status = reader->Finish();
+            if (status.ok()) {
+                fsync(new_file);
+                // Reset file offset of open fd
+                lseek(new_file, SEEK_SET, 0);
+                // Copy stats into temporary file
+                local_res = lstat(path.c_str(), &file_stats);
+                pwrite(stats_file_fd, &file_stats, sizeof(struct stat), 0);
+                fsync(stats_file_fd);
+                close(stats_file_fd);
+                // Return fd
+                return new_file;
+                // return reply.err();
+            } else {
+                close(stats_file_fd);
+                unlink(stats_file_path);
+                return -1;
+            }
+	    }
+        return -1;
+    }
+
+    int CloseStream(const std::string& path, int fd){
+        CloseRequest request;
+        request.set_path(path);
+	std::cout<<"Closing File:"<<path<<std::endl;
+	int rc, close_rc;
+
+	rc = fsync(fd);
+	if (rc == -1) {
+            return -errno;
+	}
+
+	struct stat file_info;
+	rc = fstat(fd, &file_info);
+	if (rc == -1) {
+            return -errno;
+	}
+
+	off_t file_size = file_info.st_size;
+	close_rc = close(fd);
+
+	if (close_rc == -1) {
+            return -errno;
+	}
+
+	rc = lstat(path.c_str(), &file_info);
+	if (rc == -1) {
+            return -errno;
+	}
+
+	// Check temporary file with stats from open
+	char * stats_file_path = (char *) malloc(path.size() + 16);
+	snprintf(stats_file_path, path.size() + 15, "%s.file_stats_tmp", path.c_str());
+	int stats_file_fd = open(stats_file_path, O_RDONLY);
+	struct stat file_stats_at_open;
+	pread(stats_file_fd, &file_stats_at_open, sizeof(struct stat), 0);
+	close(stats_file_fd);
+
+        struct stat server_stats;
+        rc = GetAttr(path, &server_stats);
+
+	// If the file has not been modified, no need to flush changes to server as long as file exists on server
+	if (rc == 0) {
+		if((file_info.st_mtim.tv_sec == file_stats_at_open.st_mtim.tv_sec) && (file_info.st_mtim.tv_nsec == file_stats_at_open.st_mtim.tv_nsec)) {
+	                unlink(stats_file_path);
+			return close_rc;
+		}
+	}
+
+        CloseReply reply;
+        ClientContext context;
+        std::unique_ptr<ClientWriter<CloseRequest>> writer(stub_->CloseStream(&context, &reply));
+	// Allocate buffer
+	char * buf = (char *) malloc(MEGABYTE);
+	int read_fd = open(path.c_str(), O_RDONLY);
+	int num_bytes = 0;
+	off_t total_bytes = 0;
+	while(total_bytes < file_size) {
+	    num_bytes = ((file_size - total_bytes) < MEGABYTE) ? (file_size - total_bytes) : MEGABYTE;
+	    rc = pread(read_fd, buf, num_bytes, total_bytes);
+	    // pread(fd, buf, file_size, 0);
+	    if (rc > 0) {
+                total_bytes += num_bytes;
+                request.set_path(path);
+	        request.set_file(std::string(buf, num_bytes));
+	        request.set_num_bytes(num_bytes);
+                if(!writer->Write(request)) {
+			std::cout << "Broken stream" << std::endl;
+			return -1;
+		}
+            } else if (rc == -1) {
+                total_bytes += num_bytes;
+                request.set_path(path);
+                request.set_file(std::string(buf, num_bytes));
+                request.set_num_bytes(num_bytes);
+                if(!writer->Write(request)) {
+			std::cout << "Broken stream" << std::endl;
+			return -1;
+		}
+                break;
+           }
+	}
+	writer->WritesDone();
+        Status status = writer->Finish();
+	close(read_fd);
+	free(buf);
+
 	if (status.ok()) {
             struct timespec updated_time[2];
             rc = lstat(path.c_str(), &file_info);
