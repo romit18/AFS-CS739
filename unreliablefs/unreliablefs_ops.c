@@ -316,6 +316,7 @@ int unreliable_truncate(const char *path, off_t length)
     if (ret == -1) {
         return -errno;
     }
+    hasBeenWritten(path);
 
     return 0;
 }
@@ -411,7 +412,7 @@ int unreliable_write(const char *path, const char *buf, size_t size,
     if (ret == -1) {
         ret = -errno;
     }
-
+    hasBeenWritten(path);
     if(fi == NULL) {
         close(fd);
     }

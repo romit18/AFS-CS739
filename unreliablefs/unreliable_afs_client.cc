@@ -10,6 +10,7 @@
 #include <libgen.h>
 #include <fuse.h>
 #include "unreliable_afs.grpc.pb.h"
+#include <unordered_set>
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -47,6 +48,12 @@ using unreliable_afs::ReadDirRequest;
 using unreliable_afs::ReadDirReply;
 using unreliable_afs::AccessRequest;
 using unreliable_afs::AccessReply;
+
+std::unordered_set<std::string> written;
+
+bool isWritten(std::string path){
+    return written.find(path) != written.end();
+}
 
 // Useful for create - mkdir if it doesn't exist
 // Source: https://stackoverflow.com/a/9210960
@@ -247,6 +254,7 @@ class UnreliableAFS {
             if(res<0)
                 return -1;
             // lseek(fd, (size_t)0, SEEK_CUR);
+            written.erase(path);
         }
         else {
             // printf("Client.OpenM >>  updated local file exists: %s", path.c_str());
@@ -308,35 +316,47 @@ class UnreliableAFS {
     int CloseM(const std::string& path, int fd){
         // std::cout<<"Client.CloseM >>  Flushing & local file exists: "<<path<<std::flush;
         if (fd != -1) {
-            int rc = fsync(fd);
-	        if (rc == -1) {
-                // std::cout<<"Client.CloseM: fsync failed"<<std::endl<<std::flush;
-                return rc;
-	        }
-            std::string buf;
-            lseek(fd, 0, SEEK_SET);
-            int size = lseek(fd, (size_t)0, SEEK_END);
-            // std::cout<<"Client.CloseM: size:"<<size<<std::endl<<std::flush;
-            if(size <= 0){
-                return 0;
-            }
-            buf.resize(size);
-            lseek(fd, 0, SEEK_SET);
-            int res = pread(fd, &buf[0], size, 0);
-            if(res < 0) {
-                // std::cout<<"Client.CloseM: res < 0, errno:"<<errno<<std::endl<<std::flush;
-                close(fd);
-                return -1;
-            }
+            // int rc = fsync(fd);
+	        // if (rc == -1) {
+            //     std::cout<<"Client.CloseM: fsync failed"<<std::endl<<std::flush;
+            //     close(fd);
+            //     return rc;
+	        // }
+            if(isWritten(path)){
+                //std::cout<<"Client.CloseM: isWritten true:"<<path<<std::endl<<std::flush;
+                std::string buf="";
+                lseek(fd, 0, SEEK_SET);
+                int size = lseek(fd, (size_t)0, SEEK_END);
+                //std::cout<<"Client.CloseM: size:"<<size<<std::endl<<std::flush;
+                int res;
+                if(size <= 0){
+                    res = WriteM(path, buf, 0, 0);
+                    close(fd);
+                    return 0;
+                }
+                buf.resize(size);
+                lseek(fd, 0, SEEK_SET);
+                // res = pread(fd, &buf[0], size, 0);
+                int tfd = open(path.c_str(), O_RDWR);
+                res = pread(tfd, &buf[0], size, 0);
+                if(res < 0) {
+                    // std::cout<<"Client.CloseM: res < 0, errno:"<<errno<<std::endl<<std::flush;
+                    close(fd);
+                    return -1;
+                }
+                // std::cout<<"Client.CloseM: buf contents: "<<buf<<std::flush;
 
-            // std::cout<<"Client.CloseM: buf contents: "<<buf<<std::flush;
-
-            res = WriteM(path, buf, buf.size(), 0);                                                                                      
-            if (res < 0) {                                                                                                                                                  
-                // printf("Client.CloseM >> Failed to write to server");                                                                                                                                   
-                return -1;                                                                                                                                                 
-            }
-	        close(fd);
+                res = WriteM(path, buf, buf.size(), 0);                                                                                      
+                if (res < 0) {                                                                                                                                                  
+                    // printf("Client.CloseM >> Failed to write to server");       
+                    close(fd);                                                                                                                                 
+                    return -1;                                                                                                                                                 
+                }
+            } 
+            // else{
+            //     std::cout<<"Client.CloseM: isWritten false:"<<path<<std::endl<<std::flush;
+            // }
+            close(fd);
             return 0;
         }
         return -1;
@@ -727,6 +747,10 @@ int Unlink(UnreliableAFS* unreliableAFS, const char* path){
 
 int Rename(UnreliableAFS* unreliableAFS, const char* old_path, const char* new_path){
   return unreliableAFS->Rename(old_path, new_path);
+}
+
+void hasBeenWritten(const char* path){
+    written.insert(std::string(path));
 }
 
 // int main(int argc, char** argv) {
