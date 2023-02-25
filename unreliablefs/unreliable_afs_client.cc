@@ -228,7 +228,7 @@ class UnreliableAFS {
             std::string rpcbuf;
             int size = server_stat.st_size;
             // printf("Client.OpenM>>  local file didn't exist / stale file >> fetching st size: %d\n", size);
-            res = ReadM(path, rpcbuf, size-1, 0);
+            res = ReadM(path, rpcbuf, size, 0);
             if (res < 0) {
                 return res;
             }
