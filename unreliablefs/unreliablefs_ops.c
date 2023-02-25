@@ -16,7 +16,7 @@
 
 #define ERRNO_NOOP -999
 
-#include "unreliablefs_ops.h" 
+#include "unreliablefs_ops.h"
 const char *fuse_op_name[] = {
     "getattr",
     "readlink",
@@ -352,18 +352,26 @@ int unreliable_read(const char *path, char *buf, size_t size, off_t offset,
     }
 
     int fd;
-    fd = open(path, O_RDONLY);
-    printf("%lld\n", fd);
+
+    if (fi == NULL) {
+	fd = open(path, O_RDONLY);
+    } else {
+	fd = fi->fh;
+    }
+
     if (fd == -1) {
 	return -errno;
     }
+
     ret = pread(fd, buf, size, offset);
     if (ret == -1) {
         ret = -errno;
     }
+
     if (fi == NULL) {
-	    ret = close(fd);
+	close(fd);
     }
+
     return ret;
 }
 
@@ -379,19 +387,24 @@ int unreliable_write(const char *path, const char *buf, size_t size,
     }
 
     int fd;
-
-    fd = open(path, O_WRONLY);
+    (void) fi;
+    if(fi == NULL) {
+	fd = open(path, O_WRONLY);
+    } else {
+	fd = fi->fh;
+    }
 
     if (fd == -1) {
-	    return -errno;
+	return -errno;
     }
 
     ret = pwrite(fd, buf, size, offset);
     if (ret == -1) {
         ret = -errno;
     }
-    if(fi == NULL){
-        ret = close(fd);
+
+    if(fi == NULL) {
+        close(fd);
     }
 
     return ret;
