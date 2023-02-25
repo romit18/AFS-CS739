@@ -124,7 +124,7 @@ message WriteMReply {
 
 message CloseRequest {
   string path = 1;
-  bytes file = 2;
+  optional bytes file = 2;
   int32 num_bytes = 3;
 }
 

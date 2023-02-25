@@ -643,10 +643,13 @@ class UnreliableAFS {
         request.set_path(path);
         request.set_flags(flags);
 
+	std::cout << "Opening File: " << path << std::endl;
+
         struct stat rpcbuf;
 
         int ret = GetAttr(path, &rpcbuf);
         if (ret < 0) {
+            std::cout << "Couldn't GetAttr" << std::endl;
             // We delete the file if it is a stale copy
             // If it was newly created we cannot access, since O_EXCL was used
             int rc = open(path.c_str(), flags);
@@ -769,7 +772,7 @@ class UnreliableAFS {
                 unlink(stats_file_path);
                 return -1;
             }
-        } else if ((rpcbuf.st_mtim.tv_sec < file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec < file_stats.st_mtim.tv_nsec))){
+        } else if ((rpcbuf.st_mtim.tv_sec < file_stats.st_mtim.tv_sec) || ((rpcbuf.st_mtim.tv_sec == file_stats.st_mtim.tv_sec) && (rpcbuf.st_mtim.tv_nsec <= file_stats.st_mtim.tv_nsec))){
 	    std::cout << "In OpenStream: Opening local file" << std::endl;
             // Copy stats into temporary file
             local_res = lstat(path.c_str(), &file_stats);
@@ -778,6 +781,7 @@ class UnreliableAFS {
             close(stats_file_fd);
             return open(path.c_str(), flags);
         }
+	std::cout << "rpcbuf.st_mtim.tv_sec: " << rpcbuf.st_mtim.tv_sec << " rpcbuf.st_mtim.tv_nsec: " << rpcbuf.st_mtim.tv_nsec << " file_stats.st_mtim.tv_sec: " << file_stats.st_mtim.tv_sec << " file_stats.st_mtim.tv_nsec: " << file_stats.st_mtim.tv_nsec << std::endl;
         return -1;
 
     }
@@ -796,6 +800,7 @@ class UnreliableAFS {
         request.set_flags(flags);
         // std::cout<<"Creating File:"<<path<<std::endl;
         // request.set_mode(mode);
+	std::cout << "Creating File: " << path << std::endl;
 
         struct stat rpcbuf;
         struct stat file_stats;
@@ -955,12 +960,13 @@ class UnreliableAFS {
 	int read_fd = open(path.c_str(), O_RDONLY);
 	int num_bytes = 0;
 	off_t total_bytes = 0;
-	while(total_bytes < file_size) {
+	while((total_bytes < file_size) || (file_size == 0)) {
 	    std::cout << "In CloseStream: Flushing changed/new file" << std::endl;
 	    num_bytes = ((file_size - total_bytes) < MEGABYTE) ? (file_size - total_bytes) : MEGABYTE;
 	    rc = pread(read_fd, buf, num_bytes, total_bytes);
 	    // pread(fd, buf, file_size, 0);
 	    if (rc > 0) {
+	        std::cout << "In CloseStream: after reading bytes" << std::endl;
                 total_bytes += num_bytes;
                 request.set_path(path);
 	        request.set_file(std::string(buf, num_bytes));
@@ -969,17 +975,29 @@ class UnreliableAFS {
 			std::cout << "Broken stream" << std::endl;
 			return -1;
 		}
-            } else if (rc == -1) {
-                total_bytes += num_bytes;
+            } else if ((rc == -1) && (file_size > 0)) {
+	        std::cout << "In CloseStream: read failed" << std::endl;
+                // total_bytes += num_bytes;
+                // request.set_path(path);
+                // request.set_file(std::string(buf, num_bytes));
+                // request.set_num_bytes(num_bytes);
+                // if(!writer->Write(request)) {
+		// 	std::cout << "Broken stream" << std::endl;
+		// 	return -1;
+		// }
+                break;
+           }
+	   if (file_size == 0) {
                 request.set_path(path);
-                request.set_file(std::string(buf, num_bytes));
-                request.set_num_bytes(num_bytes);
+	        request.set_num_bytes(num_bytes);
                 if(!writer->Write(request)) {
 			std::cout << "Broken stream" << std::endl;
 			return -1;
 		}
-                break;
-           }
+	   }
+	   if (total_bytes == 0) {
+		   break;
+	   }
 	}
 	writer->WritesDone();
         Status status = writer->Finish();

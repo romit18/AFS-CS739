@@ -329,12 +329,15 @@ int unreliable_open(const char *path, struct fuse_file_info *fi)
     } else if (ret) {
         return ret;
     }
+    printf("before Open\n");
     // ret = OpenM(unreliableAFS, path, fi);
     ret = Open(unreliableAFS, path, fi->flags);
     // ret = open(path, fi->flags);
+    printf("after Open\n");
     if (ret == -1) {
         return -errno;
     }
+    printf("rc was ok\n");
     fi->fh = (int64_t) ret;
     return 0;
     // return ret;

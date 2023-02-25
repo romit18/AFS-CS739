@@ -410,6 +410,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             int rc, new_file;
 	    int exists = 0;
 	    struct stat dir_stats, file_stats;
+	    std::cout << "In CloseStream" << std::endl;
 
             // Allocate space for fetched data
             char* fetched_data = (char *) malloc(MEGABYTE);
@@ -417,6 +418,22 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             off_t total_bytes = 0;
 
             while(reader->Read(&request)) {
+                std::cout<<"Server closing File:"<<path<<std::endl;
+		if(request.num_bytes() == 0) {
+                    path = server_base_directory + request.path();
+                    std::cout<<"Server creating empty file:"<<path<<std::endl;
+	            char * file_dirname = (char *) malloc(PATH_MAX);
+	            char * c_path = new char[path.length() + 1];
+                    strcpy(c_path, path.c_str());
+                    file_dirname = dirname(const_cast<char*>(c_path));
+                    if (rc == -1) {
+                        reply->set_err(-errno);
+                        return Status::CANCELLED;
+	            }
+                    free(file_dirname);
+                    new_file = open(path.c_str(), O_CREAT | O_RDWR | O_EXCL, 0777);
+		    break;
+		}
                 if (total_bytes == 0) {
                     path = server_base_directory + request.path();
                     std::cout<<"Server closing File:"<<path<<std::endl;
@@ -463,6 +480,7 @@ class UnreliableAFSServiceImpl final : public UnreliableAFSProto::Service {
             }
 	    // std::cout << "new file" << std::endl;
             // Reset file offset of open fd
+	    std::cout << "After Transfer" << std::endl;
 	    lseek(new_file, SEEK_SET, 0);
 	    fsync(new_file);
 	    rc = close(new_file);
