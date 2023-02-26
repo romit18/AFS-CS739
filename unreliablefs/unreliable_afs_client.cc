@@ -949,6 +949,9 @@ class UnreliableAFS {
         struct stat server_stats;
         rc = GetAttr(path, &server_stats);
 
+        std::string tmp_write_path;
+        tmp_write_path = path + ".tmpwrittenfile";
+        struct stat tmp_write_stats;
 	// If the file has not been modified, no need to flush changes to server as long as file exists on server
 	if (rc == 0) {
 		//std::cout << "Server has the file" << std::endl;
@@ -956,16 +959,18 @@ class UnreliableAFS {
 		// //std::cout << "File info at present - sec: " << file_info.st_mtim.tv_sec << " nsec: " << file_info.st_mtim.tv_nsec << std::endl;
 		// //std::cout << "" << std::endl;
 		// if((file_info.st_mtim.tv_sec == file_stats_at_open.st_mtim.tv_sec) && (file_info.st_mtim.tv_nsec == file_stats_at_open.st_mtim.tv_nsec)) {
-		std::string tmp_write_path;
-		tmp_write_path = path + ".tmpwrittenfile";
 		// std::cout << "Temp write path being checked is " << tmp_write_path << std::endl;
-		struct stat tmp_write_stats;
 		if(lstat(tmp_write_path.c_str(), &tmp_write_stats) == -1) {
 	                //std::cout << "In CloseStream: Closing unchanged file" << std::endl;
 	                unlink(stats_file_path);
 			return close_rc;
 		}
 		unlink(tmp_write_path.c_str());
+	} else if ((rc < 0) && (lstat(tmp_write_path.c_str(), &tmp_write_stats) == 0)) {
+            // If a created file is written, the tmp file will be created
+	    // This must be deleted, otherwise the next  open will always be flushed,
+	    // regardless of whether anything is written
+	    unlink(stats_file_path);
 	}
 
         CloseReply reply;
