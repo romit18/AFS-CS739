@@ -683,7 +683,7 @@ int main(int argc, char** argv) {
         base_path_str = arg_val.substr(start_pos + 1);
       } else {
         //std::cout << "The only correct argument syntax is --base="
-                  << std::endl;
+                //   << std::endl;
         return 0;
       }
     } else {
