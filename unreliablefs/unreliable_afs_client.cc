@@ -958,10 +958,12 @@ class UnreliableAFS {
 		// if((file_info.st_mtim.tv_sec == file_stats_at_open.st_mtim.tv_sec) && (file_info.st_mtim.tv_nsec == file_stats_at_open.st_mtim.tv_nsec)) {
 		std::string tmp_write_path;
 		tmp_write_path = path + ".tmpwrittenfile";
+		// std::cout << "Temp write path being checked is " << tmp_write_path << std::endl;
 		struct stat tmp_write_stats;
 		if(lstat(tmp_write_path.c_str(), &tmp_write_stats) == -1) {
 	                //std::cout << "In CloseStream: Closing unchanged file" << std::endl;
 	                unlink(stats_file_path);
+			unlink(tmp_write_path.c_str());
 			return close_rc;
 		}
 	}

@@ -410,8 +410,12 @@ int unreliable_write(const char *path, const char *buf, size_t size,
         close(fd);
     }
 
-    char * tmp_path = (char *) malloc(sizeof(path) + 15);
-    snprintf(tmp_path, sizeof(path) + 15, "%s.tmpwrittenfile", path);
+    char * tmp_path = (char *) malloc(strlen(path) + 16);
+    // printf("size of path is %d", strlen(path));
+    // printf("size of path + 16 is %d", (strlen(path) + 16));
+    // printf("path is %s", path);
+    snprintf(tmp_path, (strlen(path) + 16), "%s.tmpwrittenfile", path);
+    // printf("writing temp file to %s\n", tmp_path);
     int new_fd = open(tmp_path, O_CREAT | O_RDWR | 0777);
     close(new_fd);
 
