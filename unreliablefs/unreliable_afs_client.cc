@@ -1063,7 +1063,8 @@ class UnreliableAFS {
 };
 
 UnreliableAFS* NewUnreliableAFS(){
-  return new UnreliableAFS(grpc::CreateChannel("c220g5-120122.wisc.cloudlab.us:50051", grpc::InsecureChannelCredentials()));
+//   return new UnreliableAFS(grpc::CreateChannel("c220g5-120122.wisc.cloudlab.us:50051", grpc::InsecureChannelCredentials()));
+  return new UnreliableAFS(grpc::CreateChannel("0.0.0.0:50051", grpc::InsecureChannelCredentials()));
 }
 
 int Mkdir(UnreliableAFS* unreliableAFS, const char* path, int mode){
