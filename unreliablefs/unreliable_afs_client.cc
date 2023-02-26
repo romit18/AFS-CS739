@@ -962,7 +962,7 @@ class UnreliableAFS {
 		// std::cout << "Temp write path being checked is " << tmp_write_path << std::endl;
 		if(lstat(tmp_write_path.c_str(), &tmp_write_stats) == -1) {
 	                //std::cout << "In CloseStream: Closing unchanged file" << std::endl;
-	                unlink(stats_file_path);
+	                unlink(tmp_write_path);
 			return close_rc;
 		}
 		unlink(tmp_write_path.c_str());
@@ -970,7 +970,7 @@ class UnreliableAFS {
             // If a created file is written, the tmp file will be created
 	    // This must be deleted, otherwise the next  open will always be flushed,
 	    // regardless of whether anything is written
-	    unlink(stats_file_path);
+	    unlink(tmp_write_path);
 	}
 
         CloseReply reply;
