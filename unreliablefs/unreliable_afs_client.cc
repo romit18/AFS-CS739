@@ -963,9 +963,9 @@ class UnreliableAFS {
 		if(lstat(tmp_write_path.c_str(), &tmp_write_stats) == -1) {
 	                //std::cout << "In CloseStream: Closing unchanged file" << std::endl;
 	                unlink(stats_file_path);
-			unlink(tmp_write_path.c_str());
 			return close_rc;
 		}
+		unlink(tmp_write_path.c_str());
 	}
 
         CloseReply reply;
